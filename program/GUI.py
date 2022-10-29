@@ -35,33 +35,32 @@ class photoCanvas():
                             background=self.bkgd_color,
                             relief=SUNKEN )
 
-        new_img = self.getimage(filepath,self.height,self.width)
-        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=new_img)
-        self.image = new_img
         self.canvas.grid(row=1,column=0)
 
     def openimage(self,root):
         filepath = filedialog.askopenfilename(initialdir='./imag/')
-        self.canvaschangeimage(root,filepath)
+        self.canvas_add_image(root,filepath)
 
-    def canvaschangeimage(self,root,filepath):
-        new_img = self.getimage(filepath,self.height,self.width)
-        self.canvas.delete(self.bkgd)
-        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=new_img)
-        self.image = new_img
+    def canvas_add_image(self,root,filepath):
+        self.image, self.primitive_image = self.getimage(filepath,self.height,self.width)
+        try:
+            self.canvas.delete(self.bkgd)
+        except:
+            pass
+        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)    
 
     def deletecanvas(self):
         self.canvas.delete(self.bkgd)
 
     def zoom_in(self):
         self.ratio_aspect = self.ratio_aspect+ 0.01
-        resized_img = self.resizeimage(self.image,self.ratio_aspect+0.01)
+        self.image = self.resizeimage(self.primitive_image,self.ratio_aspect*1.05)
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
-        self.image = resized_img
+        # self.image = resized_img
 
     def zoom_out(self):
         self.ratio_aspect = self.ratio_aspect+ 0.01
-        resized_img = self.resizeimage(self.image,self.ratio_aspect+0.01)
+        resized_img = self.resizeimage(self.primitive_image,self.ratio_aspect*0.95)
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
         self.image = resized_img
 
@@ -72,7 +71,8 @@ class photoCanvas():
         else:
             ratio_aspect = width/my_img.width
         new_img = self.resizeimage(my_img,ratio_aspect)
-        return new_img
+        self.ratio_aspect = ratio_aspect
+        return new_img, my_img
 
     def resizeimage(self,my_img,ratio_aspect):
         new_size = (int(my_img.width*ratio_aspect),int(my_img.height*ratio_aspect))
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     canvas = photoCanvas(root,"imag/B1.jpg")
 
     zoom_in_btn = Button(root,text='zoom in',command=lambda:canvas.zoom_in()).grid(row=1,column=1)
-
+    zoom_out_btn = Button(root,text='zoom out',command=lambda:canvas.zoom_out()).grid(row=2,column=1)
     root.config(menu=menubar)
     root.mainloop()
 
