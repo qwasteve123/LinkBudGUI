@@ -27,26 +27,32 @@ def getimage(file_path,ratio_aspect):
     return new_img
 
 class photoCanvas():
+
     def __init__(self,root,filepath,ratio):
-        # Canvas.__init__(self,root)
+        self.width = 900
+        self.height = 600
+        self.ratio = 0.1
+        self.bkgd_color = 'white'
+
+        self.canvas = Canvas(root, 
+                            width=self.width,height=self.height, 
+                            background=self.bkgd_color,
+                            relief=SUNKEN )
+
         new_img = getimage(filepath,ratio)
-        self.canvas = Canvas(root, width=600,height=600)
-        self.bkgd = self.canvas.create_image(0,0,anchor=N,image=new_img)
+        self.bkgd = self.canvas.create_image(0,0,anchor=NW,image=new_img)
         self.image = new_img
         self.canvas.grid(row=1,column=0)
 
-    def opennewimage(self,root):
+    def openimage(self,root):
         filepath = filedialog.askopenfilename(initialdir='./imag/')
-        ratio = 0.1
-        self.canvaschangeimage(root,filepath,ratio)
+        self.canvaschangeimage(root,filepath,self.ratio)
 
     def canvaschangeimage(self,root,filepath,ratio):
         new_img = getimage(filepath,ratio)
-        self.grid_forget()
-        # self = Canvas(root, width=600,height=300)
-        # self.create_image(0,0,anchor=N,image=new_img)
-        # self.image = new_img
-        # self.grid(row=1,column=0)
+        self.canvas.delete(self.bkgd)
+        self.bkgd = self.canvas.create_image(0,0,anchor=NW,image=new_img)
+        self.image = new_img
 
     def deletecanvas(self):
         self.canvas.delete(self.bkgd)
@@ -57,7 +63,7 @@ class MenuBar(Menu):
         Menu.__init__(self,root)
         file = Menu(self, tearoff=False)
         file.add_command(label='New')
-        file.add_command(label="Open",command=lambda:canvas.deletecanvas())  
+        file.add_command(label="Open",command=lambda:canvas.openimage(root))  
         file.add_command(label="Save")  
         file.add_command(label="Save as")    
         file.add_separator()  
@@ -73,7 +79,6 @@ if __name__ == "__main__":
 
     menubar = MenuBar(root)
     canvas = photoCanvas(root,"imag/B1.jpg",0.1)
-    canvas.deletecanvas()
 
     root.config(menu=menubar)
     root.mainloop()
