@@ -34,6 +34,7 @@ class photoCanvas():
         self.MIN_ZOOM = -30
         self.ZOOM_SCALE = 1.1
 
+
         self.canvas = Canvas(root, 
                             width=self.width,height=self.height, 
                             background=self.bkgd_color,
@@ -41,6 +42,8 @@ class photoCanvas():
 
         self.canvas.grid(row=1,column=0)
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
+        self.canvas.bind("<B2-Motion>", self.pan_move)
+        self.canvas.bind("<B2-ButtonRelease>", self.test)
 
     def mouse_wheel(self,event):
         if event.num == 5 or event.delta == -120:
@@ -50,7 +53,17 @@ class photoCanvas():
             if self.count < self.MAX_ZOOM - 1:
                 self.count += 1
         self.zoom_in_or_out(self.count)
-    
+
+    def test(self,event):
+        self.x1, self.y1 = None, None
+
+    def pan_move(self,event):
+        try:
+            x2, y2 = event.x, event.y
+            self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
+            self.x1, self.y1 = event.x, event.y
+        except:
+            self.x1, self.y1 = event.x, event.y
 
     def openimage(self,root):
         filepath = filedialog.askopenfilename(initialdir='./imag/')
