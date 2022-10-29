@@ -61,9 +61,16 @@ class photoCanvas():
         try:
             x2, y2 = event.x, event.y
             self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
+            self.image_center(x2-self.x1, y2-self.y1)
             self.x1, self.y1 = event.x, event.y
+            
         except:
             self.x1, self.y1 = event.x, event.y
+
+    def image_center(self,x_displacement, y_displacement):
+        self.image_centerx += x_displacement
+        self.image_centery += y_displacement
+        print(self.image_centerx,self.image_centery,x_displacement,y_displacement)
 
     def openimage(self,root):
         filepath = filedialog.askopenfilename(initialdir='./imag/')
@@ -78,6 +85,7 @@ class photoCanvas():
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
         self.count
         self.background_list = self.save_background()
+        self.image_centerx, self.image_centery = self.width/2, self.height/2
 
     def save_background(self):
         dict = {}
@@ -92,7 +100,7 @@ class photoCanvas():
         # self.zoom_image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.1**count))
         cropped_image = self.cropimage(self.background_list[self.count])
         self.image = self.to_tkimage(cropped_image)
-        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
+        self.bkgd = self.canvas.create_image(self.image_centerx,self.image_centery,anchor=CENTER,image=self.image)
         print(self.count)
 
     def getimage(self,file_path,height,width):
@@ -120,7 +128,19 @@ class photoCanvas():
         if self.count > 3:
             x1, y1 = image.width/2, image.height/2
             x2, y2 = self.width/2, self.height/2
-            coordinate = x1-x2, y1-y2, x1+x2, y1+y2
+            coordinate = 0.95*x1-x2, 0.95*y1-y2, 1.05*x1+x2, 1.05*y1+y2
+            print(coordinate)
+            cropped = image.crop((coordinate))
+        else:
+            cropped = image
+        return cropped
+
+    def cropimage2(self,image):
+        # crop from center of image with canvas frame
+        if self.count > 3:
+            x1, y1 = image.width/2, image.height/2
+            x2, y2 = self.width/2, self.height/2
+            coordinate = 0.95*x1-x2, 0.95*y1-y2, 1.05*x1+x2, 1.05*y1+y2
             print(coordinate)
             cropped = image.crop((coordinate))
         else:
