@@ -76,8 +76,9 @@ class photoCanvas():
         self.canvas.delete(self.bkgd)
 
     def zoom_in_or_out(self,count):
-        # self.zoom_image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.05**count))
-        self.image = self.to_tkimage(self.background_list[self.count])
+        # self.zoom_image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.1**count))
+        cropped_image = self.cropimage(self.background_list[self.count])
+        self.image = self.to_tkimage(cropped_image)
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
         print(self.count)
 
@@ -102,7 +103,16 @@ class photoCanvas():
         return tk_image
 
     def cropimage(self,image):
-        pass
+        # crop from center of image with canvas frame
+        if self.count > 3:
+            x1, y1 = image.width/2, image.height/2
+            x2, y2 = self.width/2, self.height/2
+            coordinate = x1-x2, y1-y2, x1+x2, y1+y2
+            print(coordinate)
+            cropped = image.crop((coordinate))
+        else:
+            cropped = image
+        return cropped
 
     def update_image(self):
         pass
