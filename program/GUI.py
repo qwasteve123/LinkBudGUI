@@ -29,6 +29,7 @@ class photoCanvas():
         self.height = 600
         self.bkgd_color = 'grey'
         self.ratio_aspect = 1
+        self.count = 1
 
         self.canvas = Canvas(root, 
                             width=self.width,height=self.height, 
@@ -36,6 +37,15 @@ class photoCanvas():
                             relief=SUNKEN )
 
         self.canvas.grid(row=1,column=0)
+        self.canvas.bind("<MouseWheel>", self.mouse_wheel)
+
+    def mouse_wheel(self,event):
+        if event.num == 5 or event.delta == -120:
+            self.count -= 1
+        if event.num == 4 or event.delta == 120:
+            self.count += 1
+        self.zoom_in_or_out(self.count)
+    
 
     def openimage(self,root):
         filepath = filedialog.askopenfilename(initialdir='./imag/')
@@ -52,17 +62,11 @@ class photoCanvas():
     def deletecanvas(self):
         self.canvas.delete(self.bkgd)
 
-    def zoom_in(self):
-        self.ratio_aspect = self.ratio_aspect+ 0.01
-        self.image = self.resizeimage(self.primitive_image,self.ratio_aspect*1.05)
+    def zoom_in_or_out(self,count):
+        # self.ratio_aspect = self.ratio_aspect+ 0.01
+        self.image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1+0.05*count))
+        print(self.ratio_aspect*(1+0.05*count))
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
-        # self.image = resized_img
-
-    def zoom_out(self):
-        self.ratio_aspect = self.ratio_aspect+ 0.01
-        resized_img = self.resizeimage(self.primitive_image,self.ratio_aspect*0.95)
-        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
-        self.image = resized_img
 
     def getimage(self,file_path,height,width):
         my_img = Image.open(file_path)
