@@ -30,6 +30,9 @@ class photoCanvas():
         self.bkgd_color = 'grey'
         self.ratio_aspect = 1
         self.count = 1
+        self.MAX_ZOOM = 30
+        self.MIN_ZOOM = -30
+        self.ZOOM_SCALE = 1.1
 
         self.canvas = Canvas(root, 
                             width=self.width,height=self.height, 
@@ -41,9 +44,11 @@ class photoCanvas():
 
     def mouse_wheel(self,event):
         if event.num == 5 or event.delta == -120:
-            self.count -= 1
+            if self.count > self.MIN_ZOOM:
+                self.count -= 1
         if event.num == 4 or event.delta == 120:
-            self.count += 1
+            if self.count < self.MAX_ZOOM - 1:
+                self.count += 1
         self.zoom_in_or_out(self.count)
     
 
@@ -57,32 +62,50 @@ class photoCanvas():
             self.canvas.delete(self.bkgd)
         except:
             pass
-        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)    
+        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
+        self.count
+        self.background_list = self.save_background()
+
+    def save_background(self):
+        dict = {}
+        for index in range(self.MIN_ZOOM,self.MAX_ZOOM,1):
+            dict[index] = self.resizeimage(self.primitive_image,self.ratio_aspect*(self.ZOOM_SCALE**index))
+        return dict
 
     def deletecanvas(self):
         self.canvas.delete(self.bkgd)
 
     def zoom_in_or_out(self,count):
-        # self.ratio_aspect = self.ratio_aspect+ 0.01
-        self.image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1+0.05*count))
-        print(self.ratio_aspect*(1+0.05*count))
+        # self.zoom_image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.05**count))
+        self.image = self.to_tkimage(self.background_list[self.count])
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
+        print(self.count)
 
     def getimage(self,file_path,height,width):
-        my_img = Image.open(file_path)
-        if my_img.height/my_img.width > height/width:
-            ratio_aspect = height/my_img.height
+        image = Image.open(file_path)
+        if image.height/image.width > height/width:
+            ratio_aspect = height/image.height
         else:
-            ratio_aspect = width/my_img.width
-        new_img = self.resizeimage(my_img,ratio_aspect)
+            ratio_aspect = width/image.width
+        resized = self.resizeimage(image,ratio_aspect)
+        tk_image = self.to_tkimage(resized)
         self.ratio_aspect = ratio_aspect
-        return new_img, my_img
+        return tk_image, image
 
-    def resizeimage(self,my_img,ratio_aspect):
-        new_size = (int(my_img.width*ratio_aspect),int(my_img.height*ratio_aspect))
-        resized = my_img.resize(new_size, Image.ANTIALIAS)
-        new_img = ImageTk.PhotoImage(resized)
-        return new_img
+    def resizeimage(self,image,ratio_aspect):
+        new_size = (int(image.width*ratio_aspect),int(image.height*ratio_aspect))
+        resized = image.resize(new_size, Image.BOX)
+        return resized
+
+    def to_tkimage(self,image):
+        tk_image = ImageTk.PhotoImage(image)
+        return tk_image
+
+    def cropimage(self,image):
+        pass
+
+    def update_image(self):
+        pass
 
 class MenuBar(Menu):
     def __init__(self,root):
