@@ -31,7 +31,7 @@ class photoCanvas():
         self.ratio_aspect = 1
         self.count = 1
         self.MAX_ZOOM = 30
-        self.MIN_ZOOM = -30
+        self.MIN_ZOOM = 0
         self.ZOOM_SCALE = 1.1
 
 
@@ -63,6 +63,7 @@ class photoCanvas():
             self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
             self.image_center(x2-self.x1, y2-self.y1)
             self.x1, self.y1 = event.x, event.y
+            self.crop_move(self.count)
             
         except:
             self.x1, self.y1 = event.x, event.y
@@ -98,9 +99,15 @@ class photoCanvas():
 
     def zoom_in_or_out(self,count):
         # self.zoom_image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.1**count))
-        cropped_image = self.cropimage(self.background_list[self.count])
+        cropped_image = self.cropimage2(self.background_list[self.count])
         self.image = self.to_tkimage(cropped_image)
         self.bkgd = self.canvas.create_image(self.image_centerx,self.image_centery,anchor=CENTER,image=self.image)
+        print(self.count)
+
+    def crop_move(self,count):
+        cropped_image = self.cropimage(self.background_list[self.count])
+        self.image = self.to_tkimage(cropped_image)
+        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
         print(self.count)
 
     def getimage(self,file_path,height,width):
@@ -123,7 +130,7 @@ class photoCanvas():
         tk_image = ImageTk.PhotoImage(image)
         return tk_image
 
-    def cropimage(self,image):
+    def cropimage2(self,image):
         # crop from center of image with canvas frame
         if self.count > 3:
             x1, y1 = image.width/2, image.height/2
@@ -135,12 +142,14 @@ class photoCanvas():
             cropped = image
         return cropped
 
-    def cropimage2(self,image):
+    def cropimage(self,image):
         # crop from center of image with canvas frame
         if self.count > 3:
             x1, y1 = image.width/2, image.height/2
-            x2, y2 = self.width/2, self.height/2
-            coordinate = 0.95*x1-x2, 0.95*y1-y2, 1.05*x1+x2, 1.05*y1+y2
+            x2, y2 = self.image_centerx-self.width/2, self.image_centery-self.height/2
+            x3, y3 = self.width/2, self.height/2
+            print(x1,x2,x3,y1,y2,y3)
+            coordinate = (x1-x2-x3), (y1-y2-y3), (x1-x2+x3), (y1-y2+y3)
             print(coordinate)
             cropped = image.crop((coordinate))
         else:
