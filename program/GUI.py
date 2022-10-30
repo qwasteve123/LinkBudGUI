@@ -5,6 +5,7 @@ import os
 import time
 from tkinter import *
 from PIL import ImageTk,Image
+from sqlalchemy import false
 
 def convert(file, outputDir):
     outputDir = outputDir + str(round(time.time())) + '/'
@@ -30,9 +31,10 @@ class photoCanvas():
         self.bkgd_color = 'grey'
         self.ratio_aspect = 1
         self.count = 1
-        self.MAX_ZOOM = 30
-        self.MIN_ZOOM = 0
+        self.MAX_ZOOM = 23
+        self.MIN_ZOOM = -28
         self.ZOOM_SCALE = 1.1
+        self.bkgd_step = 7
 
 
         self.canvas = Canvas(root, 
@@ -43,18 +45,23 @@ class photoCanvas():
         self.canvas.grid(row=1,column=0)
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
         self.canvas.bind("<B2-Motion>", self.pan_move)
-        self.canvas.bind("<B2-ButtonRelease>", self.test)
+        self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
 
     def mouse_wheel(self,event):
         if event.num == 5 or event.delta == -120:
             if self.count > self.MIN_ZOOM:
                 self.count -= 1
+                self.zoom_in = False
         if event.num == 4 or event.delta == 120:
             if self.count < self.MAX_ZOOM - 1:
                 self.count += 1
+                self.zoom_in = True
+        self.zoom_deviation(event,self.zoom_in)
         self.zoom_in_or_out(self.count)
+        self.zoom_in = None
 
-    def test(self,event):
+
+    def pan_release(self,event):
         self.x1, self.y1 = None, None
 
     def pan_move(self,event):
@@ -63,15 +70,13 @@ class photoCanvas():
             self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
             self.image_center(x2-self.x1, y2-self.y1)
             self.x1, self.y1 = event.x, event.y
-            self.crop_move(self.count)
-            
         except:
             self.x1, self.y1 = event.x, event.y
+
 
     def image_center(self,x_displacement, y_displacement):
         self.image_centerx += x_displacement
         self.image_centery += y_displacement
-        print(self.image_centerx,self.image_centery,x_displacement,y_displacement)
 
     def openimage(self,root):
         filepath = filedialog.askopenfilename(initialdir='./imag/')
@@ -84,30 +89,41 @@ class photoCanvas():
         except:
             pass
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
-        self.count
-        self.background_list = self.save_background()
+        self.count = 1
         self.image_centerx, self.image_centery = self.width/2, self.height/2
+        self.background_list = self.save_background()
 
     def save_background(self):
-        dict = {}
-        for index in range(self.MIN_ZOOM,self.MAX_ZOOM,1):
-            dict[index] = self.resizeimage(self.primitive_image,self.ratio_aspect*(self.ZOOM_SCALE**index))
-        return dict
+        list = []
+        for index in range(self.MIN_ZOOM,self.MAX_ZOOM,self.bkgd_step):
+            print(index)
+            list.append(self.resizeimage(self.primitive_image,self.ratio_aspect*(self.ZOOM_SCALE**index)))
+        return list
 
     def deletecanvas(self):
         self.canvas.delete(self.bkgd)
 
+    def zoom_deviation(self,event,zoom_in):
+        if zoom_in:
+            zoom = 1
+        elif zoom_in is None:
+            zoom = 0
+        else:
+            zoom = -1
+        dev_x,dev_y = self.image_centerx - event.x, self.image_centery - event.y
+        print(self.image_centerx,self.image_centery,event.x,event.y,dev_x,dev_y,zoom)
+        self.image_centerx = dev_x*0.1*zoom + self.image_centerx
+        self.image_centery = dev_y*0.1*zoom + self.image_centery
     def zoom_in_or_out(self,count):
-        # self.zoom_image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.1**count))
-        cropped_image = self.cropimage2(self.background_list[self.count])
-        self.image = self.to_tkimage(cropped_image)
+        # bkgd_index = (count-self.MIN_ZOOM)//self.bkgd_step
+        # print('bkgd: ',bkgd_index,count,count%self.bkgd_step)
+        # try:
+        #     self.image = self.resizeimage(self.background_list[bkgd_index+1],1.1**(count%self.bkgd_step-self.bkgd_step))
+        # except:
+        #     self.image = self.resizeimage(self.background_list[bkgd_index],1.1**(count%self.bkgd_step))
+        self.image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.1**count))
+        self.image = self.to_tkimage(self.image)
         self.bkgd = self.canvas.create_image(self.image_centerx,self.image_centery,anchor=CENTER,image=self.image)
-        print(self.count)
-
-    def crop_move(self,count):
-        cropped_image = self.cropimage(self.background_list[self.count])
-        self.image = self.to_tkimage(cropped_image)
-        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
         print(self.count)
 
     def getimage(self,file_path,height,width):
