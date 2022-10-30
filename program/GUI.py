@@ -91,14 +91,14 @@ class photoCanvas():
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
         self.count = 1
         self.image_centerx, self.image_centery = self.width/2, self.height/2
-        self.background_list = self.save_background()
+    #     self.background_list = self.save_background()
 
-    def save_background(self):
-        list = []
-        for index in range(self.MIN_ZOOM,self.MAX_ZOOM,self.bkgd_step):
-            print(index)
-            list.append(self.resizeimage(self.primitive_image,self.ratio_aspect*(self.ZOOM_SCALE**index)))
-        return list
+    # def save_background(self):
+    #     list = []
+    #     for index in range(self.MIN_ZOOM,self.MAX_ZOOM,self.bkgd_step):
+    #         print(index)
+    #         list.append(self.resizeimage(self.primitive_image,self.ratio_aspect*(self.ZOOM_SCALE**index)))
+    #     return list
 
     def deletecanvas(self):
         self.canvas.delete(self.bkgd)
@@ -114,17 +114,27 @@ class photoCanvas():
         print(self.image_centerx,self.image_centery,event.x,event.y,dev_x,dev_y,zoom)
         self.image_centerx = dev_x*0.1*zoom + self.image_centerx
         self.image_centery = dev_y*0.1*zoom + self.image_centery
+
     def zoom_in_or_out(self,count):
-        # bkgd_index = (count-self.MIN_ZOOM)//self.bkgd_step
-        # print('bkgd: ',bkgd_index,count,count%self.bkgd_step)
-        # try:
-        #     self.image = self.resizeimage(self.background_list[bkgd_index+1],1.1**(count%self.bkgd_step-self.bkgd_step))
-        # except:
-        #     self.image = self.resizeimage(self.background_list[bkgd_index],1.1**(count%self.bkgd_step))
-        self.image = self.resizeimage(self.primitive_image,self.ratio_aspect*(1.1**count))
-        self.image = self.to_tkimage(self.image)
+        cropped_img = self.crop_img(self.primitive_image,count)
+        print(self.primitive_image.height, cropped_img.height)
+        resized_img = self.resizeimage(cropped_img,self.ratio_aspect*(1.1**count))
+        self.image = self.to_tkimage(resized_img)
         self.bkgd = self.canvas.create_image(self.image_centerx,self.image_centery,anchor=CENTER,image=self.image)
         print(self.count)
+
+    def crop_img(self,image,count):
+        count -=1
+        if count>2:
+            x1 = (image.width-image.width*(1.1**(-1*count)))/2
+            x2 = (image.width+image.width*(1.1**(-1*count)))/2
+            y1 = (image.height-image.height*(1.1**(-1*count)))/2
+            y2 = (image.height+image.height*(1.1**(-1*count)))/2
+        else:
+            return image
+        print(x1,y1,x2,y2)
+        cropped_img = image.crop((x1,y1,x2,y2))
+        return cropped_img
 
     def getimage(self,file_path,height,width):
         image = Image.open(file_path)
