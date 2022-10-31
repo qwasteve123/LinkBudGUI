@@ -5,7 +5,7 @@ import os
 import time
 from tkinter import *
 from PIL import ImageTk,Image
-from sqlalchemy import false
+from relative_grid import *
 
 def convert(file, outputDir):
     outputDir = outputDir + str(round(time.time())) + '/'
@@ -21,9 +21,69 @@ def convert(file, outputDir):
         print(myfile)
     return myfile
 
+class WindowCanvas():
+    def __init__(self,root):
+        self.width = 900
+        self.height = 600
+        self.bkgd_color = 'grey'
+        self.count = 1
+        self.MAX_ZOOM = 23
+        self.MIN_ZOOM = -28
+        self.zoom_step = 1
+        self.ZOOM_SCALE = 1.1
+        self.initialdir= './imag/'
 
+        self.canvas = Canvas(root, 
+                        width=self.width,height=self.height, 
+                        background=self.bkgd_color,
+                        relief=SUNKEN )   
+        self.canvas.grid(row=1,column=0)   
+        self.world = WorldGrid(self.width,self.height,1,self.canvas)
+        self.canvas.bind("<MouseWheel>", self.mouse_wheel)
+        self.canvas.bind("<B2-Motion>", self.pan_move)
+        self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
 
-class photoCanvas():
+    def openimage(self,root):
+        filepath = filedialog.askopenfilename(initialdir=self.initialdir)
+        self.world.background(filepath)
+
+    def mouse_wheel(self,event):
+        if event.num == 5 or event.delta == -120:
+            if self.count > self.MIN_ZOOM:
+                self.count -= 1
+                self.zoom_in = False
+        if event.num == 4 or event.delta == 120:
+            if self.count < self.MAX_ZOOM - 1:
+                self.count += 1
+                self.zoom_in = True
+        self.zoom_deviation(event,self.zoom_in)
+        self.zoom_in_or_out(self.count)
+        self.zoom_in = None
+
+    def pan_release(self,event):
+        self.x1, self.y1 = None, None
+
+    def pan_move(self,event):
+        try:
+            x2, y2 = event.x, event.y
+            self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
+            self.image_center(x2-self.x1, y2-self.y1)
+            self.x1, self.y1 = event.x, event.y
+        except:
+            self.x1, self.y1 = event.x, event.y
+
+    def s_x(self,x):
+        x += self.width/2
+        return x
+    def s_y(self,y):
+        y = -y + self.height/2
+        return y
+    def zoom():
+        pass
+    def pan():
+        pass
+
+class PhotoCanvas():
 
     def __init__(self,root,filepath):
         self.width = 900
@@ -34,7 +94,6 @@ class photoCanvas():
         self.MAX_ZOOM = 23
         self.MIN_ZOOM = -28
         self.ZOOM_SCALE = 1.1
-        self.bkgd_step = 7
 
 
         self.canvas = Canvas(root, 
@@ -59,6 +118,16 @@ class photoCanvas():
         self.zoom_deviation(event,self.zoom_in)
         self.zoom_in_or_out(self.count)
         self.zoom_in = None
+
+    def canvas_add_image(self,root,filepath):
+        self.image, self.primitive_image = self.getimage(filepath,self.height,self.width)
+        try:
+            self.canvas.delete(self.bkgd)
+        except:
+            pass
+        self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
+        self.count = 1
+        self.image_centerx, self.image_centery = self.width/2, self.height/2
 
 
     def pan_release(self,event):
@@ -91,14 +160,6 @@ class photoCanvas():
         self.bkgd = self.canvas.create_image(self.width/2,self.height/2,anchor=CENTER,image=self.image)
         self.count = 1
         self.image_centerx, self.image_centery = self.width/2, self.height/2
-    #     self.background_list = self.save_background()
-
-    # def save_background(self):
-    #     list = []
-    #     for index in range(self.MIN_ZOOM,self.MAX_ZOOM,self.bkgd_step):
-    #         print(index)
-    #         list.append(self.resizeimage(self.primitive_image,self.ratio_aspect*(self.ZOOM_SCALE**index)))
-    #     return list
 
     def deletecanvas(self):
         self.canvas.delete(self.bkgd)
@@ -126,10 +187,12 @@ class photoCanvas():
     def crop_img(self,image,count):
         count -=1
         if count>2:
-            x1 = (image.width-image.width*(1.1**(-1*count)))/2
-            x2 = (image.width+image.width*(1.1**(-1*count)))/2
-            y1 = (image.height-image.height*(1.1**(-1*count)))/2
-            y2 = (image.height+image.height*(1.1**(-1*count)))/2
+            dev_x = self.image_centerx - self.width/2
+            dev_y = self.image_centery - self.height/2
+            x1 = (image.width-image.width*(1.1**(-1*count)))/2 - dev_x
+            x2 = (image.width+image.width*(1.1**(-1*count)))/2 - dev_x
+            y1 = (image.height-image.height*(1.1**(-1*count)))/2 - dev_y
+            y2 = (image.height+image.height*(1.1**(-1*count)))/2 - dev_y
         else:
             return image
         print(x1,y1,x2,y2)
@@ -207,7 +270,8 @@ if __name__ == "__main__":
     root.iconbitmap("Image_Folder/icon.ico")
 
     menubar = MenuBar(root)
-    canvas = photoCanvas(root,"imag/B1.jpg")
+    # canvas = PhotoCanvas(root,"imag/B1.jpg")
+    canvas = WindowCanvas(root)
 
     zoom_in_btn = Button(root,text='zoom in',command=lambda:canvas.zoom_in()).grid(row=1,column=1)
     zoom_out_btn = Button(root,text='zoom out',command=lambda:canvas.zoom_out()).grid(row=2,column=1)
