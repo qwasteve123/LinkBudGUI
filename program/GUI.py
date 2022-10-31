@@ -45,7 +45,7 @@ class WindowCanvas():
 
     def openimage(self,root):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
-        self.world.background(filepath)
+        self.world.background(filepath,self.canvas)
 
     def mouse_wheel(self,event):
         if event.num == 5 or event.delta == -120:

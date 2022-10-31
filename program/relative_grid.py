@@ -1,4 +1,4 @@
-from PIL import ImageTk,Image
+import PIL as pil
 from tkinter import *
 
 # save coordinate of objects and output on screen objects
@@ -20,10 +20,12 @@ class WorldGrid():
 
     ############################################################
 
-    def background(self,filepath):
-        image = Image.open(filepath)
-        tk_image = ImageTk.PhotoImage(image)
-        self.canvas.create_line(300, 35, 300, 200, dash=(10), width=5)
+    class background():
+        def __init__(self,filepath,canvas):
+            image = pil.Image.open(filepath)
+            tk_image = pil.ImageTk.PhotoImage(image)
+            canvas.create_image(WorldGrid.screen_width/2,WorldGrid.screen_height/2,anchor=CENTER,image=tk_image)
+            self.image = tk_image
 
 
 
