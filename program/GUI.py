@@ -36,16 +36,16 @@ class WindowCanvas():
         self.canvas = Canvas(root, 
                         width=self.width,height=self.height, 
                         background=self.bkgd_color,
-                        relief=SUNKEN )   
+                        relief=SUNKEN )
         self.canvas.grid(row=1,column=0)   
-        self.world = WorldGrid(self.width,self.height,1,self.canvas)
+        self.world_grid = WorldGrid(self.width,self.height,1,self.canvas)
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
         self.canvas.bind("<B2-Motion>", self.pan_move)
         self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
 
-    def openimage(self,root):
+    def openimage(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
-        self.world.background(filepath,self.canvas)
+        self.world_grid.add_background(filepath,0,0)
 
     def mouse_wheel(self,event):
         if event.num == 5 or event.delta == -120:
@@ -66,8 +66,9 @@ class WindowCanvas():
     def pan_move(self,event):
         try:
             x2, y2 = event.x, event.y
-            self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
-            self.image_center(x2-self.x1, y2-self.y1)
+            # self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
+            # self.image_center(x2-self.x1, y2-self.y1)
+            self.world_grid.pan_move()
             self.x1, self.y1 = event.x, event.y
         except:
             self.x1, self.y1 = event.x, event.y
@@ -254,7 +255,7 @@ class MenuBar(Menu):
         Menu.__init__(self,root)
         file = Menu(self, tearoff=False)
         file.add_command(label='New')
-        file.add_command(label="Open",command=lambda:canvas.openimage(root))  
+        file.add_command(label="Open",command=lambda:canvas.openimage())  
         file.add_command(label="Save")  
         file.add_command(label="Save as")
         file.add_command(label="Delete",command=lambda:canvas.deletecanvas())     
