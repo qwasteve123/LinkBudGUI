@@ -45,8 +45,7 @@ class WindowCanvas():
 
     def openimage(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
-        self.world_grid.add_background(filepath,0,0)
-
+        self.world_grid.add_background(filepath)
     def mouse_wheel(self,event):
         if event.num == 5 or event.delta == -120:
             if self.count > self.MIN_ZOOM:
@@ -73,10 +72,6 @@ class WindowCanvas():
         except:
             self.x1, self.y1 = event.x, event.y
 
-    def s_x(self,x):
-        x += self.width/2
-        return x
-    def s_y(self,y):
         y = -y + self.height/2
         return y
     def zoom():
@@ -274,8 +269,6 @@ if __name__ == "__main__":
     # canvas = PhotoCanvas(root,"imag/B1.jpg")
     canvas = WindowCanvas(root)
 
-    zoom_in_btn = Button(root,text='zoom in',command=lambda:canvas.zoom_in()).grid(row=1,column=1)
-    zoom_out_btn = Button(root,text='zoom out',command=lambda:canvas.zoom_out()).grid(row=2,column=1)
     root.config(menu=menubar)
     root.mainloop()
 
