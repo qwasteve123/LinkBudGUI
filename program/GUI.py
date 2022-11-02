@@ -23,8 +23,8 @@ def convert(file, outputDir):
 
 class WindowCanvas():
     def __init__(self,root):
-        self.width = 900
-        self.height = 600
+        self.width = 1000
+        self.height = 1000
         self.bkgd_color = 'grey'
         self.count = 1
         self.MAX_ZOOM = 23
@@ -65,15 +65,12 @@ class WindowCanvas():
     def pan_move(self,event):
         try:
             x2, y2 = event.x, event.y
-            # self.canvas.move(self.bkgd, x2-self.x1, y2-self.y1)
-            # self.image_center(x2-self.x1, y2-self.y1)
-            self.world_grid.pan_move()
+            self.world_grid.pan_move(x2-self.x1, y2-self.y1)
             self.x1, self.y1 = event.x, event.y
         except:
             self.x1, self.y1 = event.x, event.y
 
-        y = -y + self.height/2
-        return y
+            
     def zoom():
         pass
     def pan():
@@ -82,8 +79,8 @@ class WindowCanvas():
 class PhotoCanvas():
 
     def __init__(self,root,filepath):
-        self.width = 900
-        self.height = 600
+        self.width = 1000
+        self.height = 1000
         self.bkgd_color = 'grey'
         self.ratio_aspect = 1
         self.count = 1
@@ -262,12 +259,16 @@ if __name__ == "__main__":
     
     root = Tk()
     root.title('Learn python')
-    root.geometry('1000x750')
+    root.geometry('1500x1200')
     root.iconbitmap("Image_Folder/icon.ico")
 
     menubar = MenuBar(root)
     # canvas = PhotoCanvas(root,"imag/B1.jpg")
     canvas = WindowCanvas(root)
+
+    #For testing
+    canvas.world_grid.add_background('imag/B1.jpg')
+
 
     root.config(menu=menubar)
     root.mainloop()
