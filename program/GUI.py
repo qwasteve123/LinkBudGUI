@@ -25,12 +25,12 @@ class WindowCanvas():
         self.width = 1000
         self.height = 600
         self.bkgd_color = 'grey'
-        self.count = 1
         self.MAX_ZOOM = 23
         self.MIN_ZOOM = -28
         self.zoom_step = 1
         self.ZOOM_SCALE = 1.1
         self.initialdir= './imag/'
+        self.is_hover = False
 
         self.canvas = Canvas(root, 
                         width=self.width,height=self.height, 
@@ -41,18 +41,46 @@ class WindowCanvas():
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
         self.canvas.bind("<B2-Motion>", self.pan_move)
         self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
+        self.canvas.bind("<Motion>", self.hover_motion)
+        self.canvas.bind("<Leave>", self.hover_leave)
+        self.label = Label(root)
+        self.label.grid(row=1,column=0,sticky=E)
 
-    def openimage(self):
-        filepath = filedialog.askopenfilename(initialdir=self.initialdir)
-        self.world_grid.add_background(filepath)
+    def hover_motion(self,event):
+            x,y = self.world_grid.background.screen_to_world(event.x,event.y,0)
+            x += self.world_grid.background.world_center_x
+            y += self.world_grid.background.world_center_y
+            self.change_label(x,y)
+
+    def hover_leave(self,event):
+        self.change_label("","")
+
+    def change_label(self,center_x,center_y):
+        if center_x == "":
+            self.label.config(text="")
+        else:
+            self.label.config(text=f'Coordinates  x:{center_x}  y:{center_y}' )
+
+    def zoom_deviation(self,event,zoom_in):
+        if zoom_in:
+            zoom = 1
+        elif zoom_in is None:
+            zoom = 0
+        else:
+            zoom = -1
+        dev_x,dev_y = self.image_centerx - event.x, self.image_centery - event.y
+        print(self.image_centerx,self.image_centery,event.x,event.y,dev_x,dev_y,zoom)
+        self.image_centerx = dev_x*(self.ZOOM_SCALE-1)*zoom + self.image_centerx
+        self.image_centery = dev_y*(self.ZOOM_SCALE-1)*zoom + self.image_centery
+
     def mouse_wheel(self,event):
         if event.num == 5 or event.delta == -120:
-            if self.count > self.MIN_ZOOM:
-                self.count -= 1
+            if self. zoom_step> self.MIN_ZOOM:
+                self.zoom_step -= 1
                 self.zoom_in = False
         if event.num == 4 or event.delta == 120:
-            if self.count < self.MAX_ZOOM - 1:
-                self.count += 1
+            if self.zoom_step < self.MAX_ZOOM - 1:
+                self.zoom_step += 1
                 self.zoom_in = True
         self.zoom_deviation(event,self.zoom_in)
         self.zoom_in_or_out(self.count)
@@ -66,14 +94,13 @@ class WindowCanvas():
             x2, y2 = event.x, event.y
             self.world_grid.pan_move(x2-self.x1, self.y1-y2)
             self.x1, self.y1 = event.x, event.y
+            self.change_label(self.world_grid.background.world_center_x,self.world_grid.background.world_center_y)
         except:
             self.x1, self.y1 = event.x, event.y
 
-            
-    def zoom():
-        pass
-    def pan():
-        pass
+    def add_background(self):
+        filepath = filedialog.askopenfilename(initialdir=self.initialdir)
+        self.world_grid.add_background(filepath)
 
 class PhotoCanvas():
 

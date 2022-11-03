@@ -4,6 +4,7 @@ from tkinter import *
 
 ZOOMSCALE = 1.1
 
+
 class WorldGrid():
     def __init__(self,screen_width,screen_height,ratio,canvas):
         self.screen_width = screen_width
@@ -30,8 +31,9 @@ class WorldGrid():
         for shape in self.shape_list:
             shape.move(x_dev,y_dev)
 
-    def to_screen(self):
-        pass
+    def zoom(self):
+        for shape in self.shape_list:
+            shape.zoom(x_dev,y_dev)
 
 ############################################################
 
@@ -121,7 +123,7 @@ class Background(Grid_Shapes):
             image = self._add_new_image(filepath)
             image = self.crop_and_resize_image(image)
         self._to_canvas(image,0,0)
-        print(self.world_center_x,self.world_center_y)
+        # print(self.world_center_x,self.world_center_y)
 
     def _add_new_image(self,filepath):
         image = self._create_image(filepath)
