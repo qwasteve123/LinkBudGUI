@@ -1,5 +1,4 @@
 from tkinter import filedialog
-from matplotlib.backend_tools import ZoomPanBase
 from pdf2image import convert_from_path
 import os
 import time
@@ -24,7 +23,7 @@ def convert(file, outputDir):
 class WindowCanvas():
     def __init__(self,root):
         self.width = 1000
-        self.height = 1000
+        self.height = 600
         self.bkgd_color = 'grey'
         self.count = 1
         self.MAX_ZOOM = 23
@@ -37,7 +36,7 @@ class WindowCanvas():
                         width=self.width,height=self.height, 
                         background=self.bkgd_color,
                         relief=SUNKEN )
-        self.canvas.grid(row=1,column=0)   
+        self.canvas.grid(row=0,column=0)   
         self.world_grid = WorldGrid(self.width,self.height,1,self.canvas)
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
         self.canvas.bind("<B2-Motion>", self.pan_move)
@@ -65,7 +64,7 @@ class WindowCanvas():
     def pan_move(self,event):
         try:
             x2, y2 = event.x, event.y
-            self.world_grid.pan_move(x2-self.x1, y2-self.y1)
+            self.world_grid.pan_move(x2-self.x1, self.y1-y2)
             self.x1, self.y1 = event.x, event.y
         except:
             self.x1, self.y1 = event.x, event.y
