@@ -31,7 +31,7 @@ class WorldGrid():
         for shape in self.shape_list:
             shape.move(x_dev,y_dev)
 
-    def zoom(self):
+    def zoom(self,x_dev,y_dev):
         for shape in self.shape_list:
             shape.zoom(x_dev,y_dev)
 
