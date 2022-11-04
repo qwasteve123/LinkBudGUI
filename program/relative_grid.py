@@ -13,6 +13,8 @@ class WorldGrid():
         self.canvas = canvas
         self.shape_list = []
         self.bkgd = 0
+        self.screen_center_world_x = 0
+        self.screen_center_world_y = 0       
 
 
     def _set_scale_step(self,scale_step):
@@ -21,15 +23,49 @@ class WorldGrid():
     def add_background(self,filepath):
         try:
             self.background.delete()
-            self.background.add_background(filepath)
+            self.background.add_background(filepath,)
         except:
-            self.background = Background(self.canvas,self.screen_width,self.screen_height,self.scale_step)
+            self._reset_screen_world_center()
+            self.background = Background(self.canvas,self.screen_width,self.screen_height,self.scale_step,0,0)
             self.shape_list.append(self.background)
             self.background.add_background(filepath)
 
+
+    def _set_screen_center_world(self,dev_x: float =0 ,dev_y: float=0):
+        try:
+            self.screen_center_world_x -= dev_x
+            self.screen_center_world_y -= dev_y
+        except:
+            self.screen_center_world_x ,self.screen_center_world_y = 0,0
+
+
+    def _reset_screen_world_center(self):
+            self.screen_center_world_x = 0
+            self.screen_center_world_y = 0
+
+    def _get_world_center(self):
+        try:
+             x,y = self.screen_center_world_x ,self.screen_center_world_y
+        except:
+            self._set_screen_center_world()
+        return self.screen_center_world_x,self.screen_center_world_y
+
+    @staticmethod
+    def screen_to_world(screen_x,screen_y,scale_step,screen_width,screen_height):
+        world_x = (screen_x - screen_width/2)*(ZOOMSCALE**scale_step)
+        world_y = -(screen_y - screen_height/2)*(ZOOMSCALE**scale_step)
+        return world_x, world_y
+
+    @staticmethod
+    def world_to_screen(world_x,world_y,scale_step,screen_width,screen_height):
+        screen_x = world_x*(ZOOMSCALE**scale_step) + screen_width/2
+        screen_y = -world_y*(ZOOMSCALE**scale_step) + screen_height/2
+        return screen_x, screen_y
+
     def pan_move(self,x_dev,y_dev):
         for shape in self.shape_list:
-            shape.move(x_dev,y_dev)
+            self._set_screen_center_world(x_dev,y_dev)
+            shape.move(self.screen_center_world_x,self.screen_center_world_y)
 
     def zoom(self,x_dev,y_dev):
         for shape in self.shape_list:
@@ -38,56 +74,33 @@ class WorldGrid():
 ############################################################
 
 class Grid_Shapes():
-    def __init__(self,canvas,screen_width,screen_height,ratio):
+    def __init__(self,canvas,screen_width,screen_height,ratio,anchor_x,anchor_y,screen_center_world_x=0,screen_center_world_y=0):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.canvas = canvas
         self.ratio = ratio
         self.width, self.height = 0,0
-        self.world_center_x, self.world_center_y = 0,0
+        self.anchor_x, self.anchor_y = anchor_x,anchor_y
+        self.screen_center_world_x, self.screen_center_world_y = screen_center_world_x,screen_center_world_y
 
     def delete(self):
         self.canvas.delete(self.bkgd)
 
-    # Input world center return image center
-    def _world_to_image(self,world_center_x,world_center_y):
-            img_world_x = world_center_x + self.width/2
-            img_world_y = -world_center_y + self.height/2
+    # Input screen_center_world return image center
+    def _world_to_image(self,world_x,world_y):
+            img_world_x = world_x + self.width/2
+            img_world_y = -world_y + self.height/2
             return img_world_x, img_world_y
 
+    def _save_screen_center_world(self,screen_center_world_x,screen_center_world_y):
+        self.screen_center_world_x,self.screen_center_world_y = screen_center_world_x,screen_center_world_y
 
-    def _set_world_center(self,dev_x: float =0 ,dev_y: float=0):
-        try:
-            self.world_center_x -= dev_x
-            self.world_center_y -= dev_y
-        except:
-            self.world_center_x ,self.world_center_y = 0,0
-
-    def _reset_world_center(self,dev_x: float =0 ,dev_y: float=0):
-            self.world_center_x = 0
-            self.world_center_y = 0
-
-    def _get_world_center(self):
-        try:
-             x,y = self.world_center_x ,self.world_center_y
-        except:
-            self._set_world_center()
-        return self.world_center_x,self.world_center_y
-
-    def screen_to_world(self,screen_x,screen_y,scale_step):
-        world_x = (screen_x - self.screen_width/2)*(ZOOMSCALE**scale_step)
-        world_y = -(screen_y - self.screen_height/2)*(ZOOMSCALE**scale_step)
-        return world_x, world_y
-    def world_to_screen(self,world_x,world_y,scale_step):
-        screen_x = world_x*(ZOOMSCALE**scale_step) + self.screen_width/2
-        screen_y = -world_y*(ZOOMSCALE**scale_step) + self.screen_height/2
-        return screen_x, screen_y
-    def get_coor_from_image_center(self,world_center_x,world_center_y,scale_step):
-        img_world_center_x, img_world_center_y = self._world_to_image(world_center_x, world_center_y)
-        world_x1 = (img_world_center_x - self.screen_width/2)*(ZOOMSCALE**scale_step)
-        world_y1 = (img_world_center_y - self.screen_height/2)*(ZOOMSCALE**scale_step)
-        world_x2 = (img_world_center_x + self.screen_width/2)*(ZOOMSCALE**scale_step)
-        world_y2 = (img_world_center_y + self.screen_height/2)*(ZOOMSCALE**scale_step)
+    def get_coor_from_image_center(self,screen_center_world_x,screen_center_world_y,scale_step):
+        img_center_world_x, img_center_world_y = self._world_to_image(screen_center_world_x, screen_center_world_y)
+        world_x1 = (img_center_world_x - self.screen_width/2)*(ZOOMSCALE**scale_step)
+        world_y1 = (img_center_world_y - self.screen_height/2)*(ZOOMSCALE**scale_step)
+        world_x2 = (img_center_world_x + self.screen_width/2)*(ZOOMSCALE**scale_step)
+        world_y2 = (img_center_world_y + self.screen_height/2)*(ZOOMSCALE**scale_step)
         return (world_x1,world_y1,world_x2,world_y2)
 
 ###########################################################
@@ -111,19 +124,15 @@ class Background(Grid_Shapes):
         image = pil.Image.open(filepath)
         return image
 
-    def new_background(self,filepath):
-        self.add_background(self,filepath)
-
     def add_background(self,filepath,type=""):
         self.filepath = filepath
         if type == 'pan':
             image = self.crop_and_resize_image(self.primitive_image)
         else:
-            self._reset_world_center()
             image = self._add_new_image(filepath)
             image = self.crop_and_resize_image(image)
         self._to_canvas(image,0,0)
-        # print(self.world_center_x,self.world_center_y)
+        # print(self.screen_center_world_x,self.screen_center_world_y)
 
     def _add_new_image(self,filepath):
         image = self._create_image(filepath)
@@ -133,19 +142,18 @@ class Background(Grid_Shapes):
         return image
 
     def crop_and_resize_image(self,image):
-        world_center_x, world_center_y = self._get_world_center()
-        cropped_img = self._crop_image(image,self.get_coor_from_image_center(world_center_x, world_center_y,0))
+        cropped_img = self._crop_image(image,self.get_coor_from_image_center(self.screen_center_world_x, self.screen_center_world_y,0))
         resized_image = self._resize_image(cropped_img,0)
         return resized_image
 
     def _to_canvas(self,image,x,y):
         tk_image = pil.ImageTk.PhotoImage(image)
         self.tk_temp_img = tk_image
-        self.bkgd = self.canvas.create_image(self.world_to_screen(x,y,0),anchor=CENTER,image=tk_image)
+        self.bkgd = self.canvas.create_image(WorldGrid.world_to_screen(x,y,0,self.screen_width,self.screen_height),anchor=CENTER,image=tk_image)
 
-    def move(self,dev_x,dev_y):
+    def move(self,screen_center_world_x,screen_center_world_y):
         self.delete()
-        self._set_world_center(dev_x,dev_y)
+        self._save_screen_center_world(screen_center_world_x,screen_center_world_y)
         self.add_background(self.filepath,'pan')
 
 

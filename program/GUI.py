@@ -47,9 +47,9 @@ class WindowCanvas():
         self.label.grid(row=1,column=0,sticky=E)
 
     def hover_motion(self,event):
-            x,y = self.world_grid.background.screen_to_world(event.x,event.y,0)
-            x += self.world_grid.background.world_center_x
-            y += self.world_grid.background.world_center_y
+            x,y = self.world_grid.screen_to_world(event.x,event.y,0,self.width,self.height)
+            x += self.world_grid.screen_center_world_x
+            y += self.world_grid.screen_center_world_y
             self.change_label(x,y)
 
     def hover_leave(self,event):
@@ -68,23 +68,25 @@ class WindowCanvas():
             zoom = 0
         else:
             zoom = -1
+        
         dev_x,dev_y = self.image_centerx - event.x, self.image_centery - event.y
         print(self.image_centerx,self.image_centery,event.x,event.y,dev_x,dev_y,zoom)
-        self.image_centerx = dev_x*(self.ZOOM_SCALE-1)*zoom + self.image_centerx
-        self.image_centery = dev_y*(self.ZOOM_SCALE-1)*zoom + self.image_centery
+        self.image_centerx = dev_x*(self.ZOOM_SCALE-1)*self.zoom_step + self.image_centerx
+        self.image_centery = dev_y*(self.ZOOM_SCALE-1)*self.zoom_step + self.image_centery
 
     def mouse_wheel(self,event):
-        if event.num == 5 or event.delta == -120:
-            if self. zoom_step> self.MIN_ZOOM:
-                self.zoom_step -= 1
-                self.zoom_in = False
-        if event.num == 4 or event.delta == 120:
-            if self.zoom_step < self.MAX_ZOOM - 1:
-                self.zoom_step += 1
-                self.zoom_in = True
-        self.zoom_deviation(event,self.zoom_in)
-        self.zoom_in_or_out(self.count)
-        self.zoom_in = None
+        print (event.num,event.delta)
+        # if event.num == 5 or event.delta == -120:
+        #     if self.zoom_step > self.MIN_ZOOM:
+        #         self.zoom_step -= 1
+        #         self.zoom_in = False
+        # if event.num == 4 or event.delta == 120:
+        #     if self.zoom_step < self.MAX_ZOOM - 1:
+        #         self.zoom_step += 1
+        #         self.zoom_in = True
+        # self.zoom_deviation(event,self.zoom_in)
+        # self.zoom_in_or_out(self.count)
+        # self.zoom_in = None
 
     def pan_release(self,event):
         self.x1, self.y1 = None, None
