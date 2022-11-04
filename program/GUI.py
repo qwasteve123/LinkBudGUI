@@ -25,8 +25,8 @@ class WindowCanvas():
         self.width = 1000
         self.height = 600
         self.bkgd_color = 'grey'
-        self.MAX_ZOOM = 23
-        self.MIN_ZOOM = -28
+        self.MAX_ZOOM = 30
+        self.MIN_ZOOM = -25
         self.scale_step = 0
         self.ZOOM_SCALE = 1.1
         self.initialdir= './imag/'
@@ -65,12 +65,12 @@ class WindowCanvas():
     def mouse_wheel(self,event):
         zoom_in = 0
         if event.delta == -120:
-            if self.scale_step >= self.MIN_ZOOM:
+            if self.scale_step <= self.MAX_ZOOM:
                 zoom_in = 1
                 self.scale_step +=1
         if event.delta == 120:
-            if self.scale_step <= self.MAX_ZOOM:
-                zoom_in = -1
+            if self.scale_step >= self.MIN_ZOOM:
+                zoom_in = -1 
                 self.scale_step -=1
         self.world_grid.zoom(event.x,event.y,zoom_in)
 
@@ -82,7 +82,6 @@ class WindowCanvas():
             x2, y2 = event.x, event.y
             self.world_grid.pan_move(x2-self.x1, self.y1-y2)
             self.x1, self.y1 = event.x, event.y
-            # print(self.world_grid.screen_center_world_x,self.world_grid.screen_center_world_y)
         except:
             self.x1, self.y1 = event.x, event.y
 
@@ -96,7 +95,7 @@ class MenuBar(Menu):
         Menu.__init__(self,root)
         file = Menu(self, tearoff=False)
         file.add_command(label='New')
-        file.add_command(label="Open",command=lambda:canvas.openimage())  
+        file.add_command(label="Open",command=lambda:canvas.add_background())  
         file.add_command(label="Save")  
         file.add_command(label="Save as")
         file.add_command(label="Delete",command=lambda:canvas.deletecanvas())     

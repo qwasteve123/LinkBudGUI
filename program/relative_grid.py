@@ -1,6 +1,7 @@
 from time import sleep
 import PIL as pil
 from tkinter import *
+import numpy as np
 
 ZOOM_SCALE = 1.1
 
@@ -26,15 +27,15 @@ class WorldGrid():
             self.background.add_background(filepath)
         except:
             self._reset_screen_world_center()
-            self.background = Background(self.canvas,self.screen_width,self.screen_height,self.scale_step,0,0)
+            self.background = Background(self.canvas,self.screen_width,self.screen_height,0,0,0)
             self.shape_list.append(self.background)
             self.background.add_background(filepath)
 
 
     def _set_screen_center_world(self,dev_x: float =0 ,dev_y: float=0):
         try:
-            self.screen_center_world_x -= dev_x
-            self.screen_center_world_y -= dev_y
+            self.screen_center_world_x -= dev_x*(ZOOM_SCALE**(-self.scale_step))
+            self.screen_center_world_y -= dev_y*(ZOOM_SCALE**(-self.scale_step))
         except:
             self.screen_center_world_x ,self.screen_center_world_y = 0,0
 
@@ -74,11 +75,10 @@ class WorldGrid():
 
     def zoom_deviation(self,event_x,event_y,zoom_in):
         self.scale_step += zoom_in
-        # print(self.scale_step)
         dev_x, dev_y = self.screen_to_world(event_x,event_y,0,self.screen_width,self.screen_height)
-        # self.screen_center_world_x = dev_x*(ZOOM_SCALE-1)*ZOOM_SCALE**(zoom_in) + self.screen_center_world_x
-        # self.screen_center_world_y = dev_y*(ZOOM_SCALE-1)*ZOOM_SCALE**(zoom_in) + self.screen_center_world_y
-        # print(self.scale_step,self.screen_center_world_x,self.screen_center_world_y)
+        self.screen_center_world_x = zoom_in*dev_x*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step) + self.screen_center_world_x
+        self.screen_center_world_y = zoom_in*dev_y*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step) + self.screen_center_world_y
+        print(self.screen_center_world_x,self.screen_center_world_y)
 
 ############################################################
 
@@ -99,7 +99,6 @@ class Grid_Shapes():
     def _world_to_image(self,world_x,world_y):
         img_world_x = world_x + self.width/2
         img_world_y = -world_y + self.height/2
-        # print(img_world_x, img_world_y)
         return img_world_x, img_world_y
 
     def world_to_screen(world_x,world_y,scale_step,screen_width,screen_height):
@@ -119,18 +118,18 @@ class Grid_Shapes():
         world_y1 = img_center_world_y - (self.screen_height/2)*(ZOOM_SCALE**(-scale_step))
         world_x2 = img_center_world_x + (self.screen_width/2)*(ZOOM_SCALE**(-scale_step))
         world_y2 = img_center_world_y + (self.screen_height/2)*(ZOOM_SCALE**(-scale_step))
-        # print('step',self.scale_step,ZOOM_SCALE**(-scale_step))
-        print("coor",(world_x1+world_x2)/2,(world_y1+world_y2)/2)
         return (world_x1,world_y1,world_x2,world_y2)
+
+
 
 ###########################################################
 
 class Background(Grid_Shapes):
+
     def _resize_image(self,image,scale_step):
         # width, height = int(image.width*ZOOM_SCALE**(-scale_step)),int(image.height*ZOOM_SCALE**(-scale_step))
         size = (self.screen_width, self.screen_height)
         image = image.resize(size, pil.Image.BOX)
-        # print(image.width, image.height)
         return image
 
     @ staticmethod
@@ -153,7 +152,6 @@ class Background(Grid_Shapes):
             image = self._add_new_image(filepath)
             image = self.crop_and_resize_image(image)
         self._to_canvas(image,0,0)
-        # print(self.screen_center_world_x,self.screen_center_world_y)
 
     def _add_new_image(self,filepath):
         image = self._create_image(filepath)
