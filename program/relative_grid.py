@@ -22,11 +22,12 @@ class WorldGrid():
         self.scale_step = scale_step
 
     def add_background(self,filepath):
+        self._reset_screen_world_center()
+        self._reset_scale_step()    
         try:
             self.background.delete()
             self.background.add_background(filepath)
         except:
-            self._reset_screen_world_center()
             self.background = Background(self.canvas,self.screen_width,self.screen_height,0,0,0)
             self.shape_list.append(self.background)
             self.background.add_background(filepath)
@@ -43,6 +44,9 @@ class WorldGrid():
     def _reset_screen_world_center(self):
             self.screen_center_world_x = 0
             self.screen_center_world_y = 0
+
+    def _reset_scale_step(self):
+            self.scale_step = 0
 
     def _get_world_center(self):
         try:
@@ -78,7 +82,6 @@ class WorldGrid():
         dev_x, dev_y = self.screen_to_world(event_x,event_y,0,self.screen_width,self.screen_height)
         self.screen_center_world_x = zoom_in*dev_x*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step) + self.screen_center_world_x
         self.screen_center_world_y = zoom_in*dev_y*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step) + self.screen_center_world_y
-        print(self.screen_center_world_x,self.screen_center_world_y)
 
 ############################################################
 
@@ -89,7 +92,8 @@ class Grid_Shapes():
         self.canvas = canvas
         self.scale_step = scale_step
         self.width, self.height = 0,0
-        self.anchor_x, self.anchor_y = anchor_x,anchor_y
+        self.screen_anchor_x, self.screen_anchor_y = 0,0
+        self.world_anchor_x, self.world_anchor_y = anchor_x,anchor_y
         self.screen_center_world_x, self.screen_center_world_y = screen_center_world_x,screen_center_world_y
 
     def delete(self):
@@ -99,6 +103,7 @@ class Grid_Shapes():
     def _world_to_image(self,world_x,world_y):
         img_world_x = world_x + self.width/2
         img_world_y = -world_y + self.height/2
+        print(img_world_x, img_world_y)
         return img_world_x, img_world_y
 
     def world_to_screen(world_x,world_y,scale_step,screen_width,screen_height):
@@ -118,18 +123,54 @@ class Grid_Shapes():
         world_y1 = img_center_world_y - (self.screen_height/2)*(ZOOM_SCALE**(-scale_step))
         world_x2 = img_center_world_x + (self.screen_width/2)*(ZOOM_SCALE**(-scale_step))
         world_y2 = img_center_world_y + (self.screen_height/2)*(ZOOM_SCALE**(-scale_step))
-        return (world_x1,world_y1,world_x2,world_y2)
+        self.get_screen_anchor(world_x1, world_y1, world_x2, world_y2,self.scale_step)
+        world_x1, world_y1, world_x2, world_y2 = self.get_boundaries(world_x1, world_y1, world_x2, world_y2,scale_step)
+        # print(world_x1-world_x2, world_y1-world_y2)
+        return world_x1, world_y1, world_x2, world_y2
+
+    def get_screen_anchor(self,world_x1, world_y1, world_x2, world_y2,scale_step):
+        dev_x, dev_y = 0,0
+        if world_x1 < 0 and world_x2 > self.width:
+            dev_x = (self.width - (world_x2 + world_x1))*(ZOOM_SCALE**(scale_step))
+        elif world_x2 > self.width:
+            dev_x = (self.width - world_x2)*(ZOOM_SCALE**(scale_step))
+        elif world_x1 < 0:
+            dev_x = (-world_x1)*(ZOOM_SCALE**(scale_step))
+
+        if world_y1 < 0 and world_y2 > self.height:
+            dev_y = (self.height - (world_y2 + world_y1))*(ZOOM_SCALE**(scale_step))
+        elif world_y2 > self.height:
+            dev_y = (self.height - world_y2)*(ZOOM_SCALE**(scale_step))
+        elif world_y1 < 0:
+            dev_y = (-world_y1)*(ZOOM_SCALE**(scale_step))
+            # dev_y = (world_x2 - self.width)*(ZOOM_SCALE**(scale_step))
+
+
+        self.screen_anchor_x = dev_x/2
+        self.screen_anchor_y = -dev_y/2
+        self._update_screen_center_world
+
+    def get_boundaries(self,world_x1, world_y1, world_x2, world_y2,scale_step):
+        if world_x1 < 0:
+            world_x1 = 0
+        if world_y1 < 0:
+            world_y1 = 0            
+        if world_x2 > self.width:
+            world_x2 = self.width  
+        if world_y2 > self.height:
+            world_y2 = self.height
+        return (world_x1, world_y1, world_x2, world_y2)
 
 
 
 ###########################################################
 
 class Background(Grid_Shapes):
-
-    def _resize_image(self,image,scale_step):
-        # width, height = int(image.width*ZOOM_SCALE**(-scale_step)),int(image.height*ZOOM_SCALE**(-scale_step))
-        size = (self.screen_width, self.screen_height)
+    def _resize_image(self,image,scale_step,dev_width =0,dev_height=0):
+        size = (self.screen_width-dev_width, self.screen_height-dev_height)
+        size = (int(image.width*(ZOOM_SCALE**(scale_step))), int(image.height*(ZOOM_SCALE**(scale_step))))
         image = image.resize(size, pil.Image.BOX)
+        # print(image.width,image.height)
         return image
 
     @ staticmethod
@@ -148,7 +189,7 @@ class Background(Grid_Shapes):
         self.filepath = filepath
         if type == 'pan':
             image = self.crop_and_resize_image(self.primitive_image)
-        else:
+        else:  
             image = self._add_new_image(filepath)
             image = self.crop_and_resize_image(image)
         self._to_canvas(image,0,0)
@@ -165,10 +206,11 @@ class Background(Grid_Shapes):
         resized_image = self._resize_image(cropped_img,self.scale_step)
         return resized_image
 
-    def _to_canvas(self,image,x,y):
+    def _to_canvas(self,image,x=0,y=0):
         tk_image = pil.ImageTk.PhotoImage(image)
         self.tk_temp_img = tk_image
-        self.bkgd = self.canvas.create_image(WorldGrid.world_to_screen(x,y,0,self.screen_width,self.screen_height),anchor=CENTER,image=tk_image)
+        self.bkgd = self.canvas.create_image(WorldGrid.world_to_screen(self.screen_anchor_x,self.screen_anchor_y,
+                                                                        0,self.screen_width,self.screen_height),anchor=CENTER,image=tk_image)
 
     def move(self,screen_center_world_x,screen_center_world_y):
         self.delete()

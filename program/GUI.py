@@ -22,7 +22,7 @@ def convert(file, outputDir):
 
 class WindowCanvas():
     def __init__(self,root):
-        self.width = 1000
+        self.width = root.winfo_width()
         self.height = 600
         self.bkgd_color = 'grey'
         self.MAX_ZOOM = 30
@@ -66,11 +66,11 @@ class WindowCanvas():
         zoom_in = 0
         if event.delta == -120:
             if self.scale_step <= self.MAX_ZOOM:
-                zoom_in = 1
+                zoom_in = -1
                 self.scale_step +=1
         if event.delta == 120:
             if self.scale_step >= self.MIN_ZOOM:
-                zoom_in = -1 
+                zoom_in = 1
                 self.scale_step -=1
         self.world_grid.zoom(event.x,event.y,zoom_in)
 
