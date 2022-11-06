@@ -13,7 +13,7 @@ class WorldGrid():
         self.scale_step = 0
         self.canvas = canvas
         self.shape_list = []
-        self.bkgd = 0
+        # self.bkgd = 0
         self.screen_center_world_x = 0
         self.screen_center_world_y = 0       
 
@@ -73,11 +73,11 @@ class WorldGrid():
             shape.move(self.screen_center_world_x,self.screen_center_world_y)
 
     def zoom(self,event_x,event_y,zoom_in):
-        self.zoom_deviation(event_x,event_y,zoom_in)
+        self._zoom_deviation(event_x,event_y,zoom_in)
         for shape in self.shape_list:
             shape.zoom(self.screen_center_world_x,self.screen_center_world_y,self.scale_step)
 
-    def zoom_deviation(self,event_x,event_y,zoom_in):
+    def _zoom_deviation(self,event_x,event_y,zoom_in):
         self.scale_step += zoom_in
         dev_x, dev_y = self.screen_to_world(event_x,event_y,0,self.screen_width,self.screen_height)
         self.screen_center_world_x = zoom_in*dev_x*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step) + self.screen_center_world_x
@@ -87,17 +87,17 @@ class WorldGrid():
 
 class Grid_Shapes():
     def __init__(self,canvas,screen_width,screen_height,scale_step,anchor_x,anchor_y,screen_center_world_x=0,screen_center_world_y=0):
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-        self.canvas = canvas
-        self.scale_step = scale_step
+        self._screen_width = screen_width
+        self._screen_height = screen_height
+        self._canvas = canvas
+        self._scale_step = scale_step
         self.width, self.height = 0,0
-        self.screen_anchor_x, self.screen_anchor_y = 0,0
+        self._screen_anchor_x, self._screen_anchor_y = 0,0
         self.world_anchor_x, self.world_anchor_y = anchor_x,anchor_y
-        self.screen_center_world_x, self.screen_center_world_y = screen_center_world_x,screen_center_world_y
+        self._screen_center_world_x, self._screen_center_world_y = screen_center_world_x,screen_center_world_y
 
     def delete(self):
-        self.canvas.delete(self.bkgd)
+        self._canvas.delete(self.bkgd)
 
     # Input screen_center_world return image center
     def _world_to_image(self,world_x,world_y):
@@ -106,29 +106,23 @@ class Grid_Shapes():
         print(img_world_x, img_world_y)
         return img_world_x, img_world_y
 
-    def world_to_screen(world_x,world_y,scale_step,screen_width,screen_height):
-        screen_x = world_x*(ZOOM_SCALE**scale_step) + screen_width/2
-        screen_y = -world_y*(ZOOM_SCALE**scale_step) + screen_height/2
-        return screen_x, screen_y
-
     def _update_screen_center_world(self,screen_center_world_x,screen_center_world_y):
-        self.screen_center_world_x,self.screen_center_world_y = screen_center_world_x,screen_center_world_y
+        self._screen_center_world_x,self._screen_center_world_y = screen_center_world_x,screen_center_world_y
 
     def _update_scale_step(self,scale_step):
-        self.scale_step = scale_step
+        self._scale_step = scale_step
 
-    def get_coor_from_image_center(self,screen_center_world_x,screen_center_world_y,scale_step):
+    def _get_coor_from_image_center(self,screen_center_world_x,screen_center_world_y,scale_step):
         img_center_world_x, img_center_world_y = self._world_to_image(screen_center_world_x, screen_center_world_y)
-        world_x1 = img_center_world_x - (self.screen_width/2)*(ZOOM_SCALE**(-scale_step))
-        world_y1 = img_center_world_y - (self.screen_height/2)*(ZOOM_SCALE**(-scale_step))
-        world_x2 = img_center_world_x + (self.screen_width/2)*(ZOOM_SCALE**(-scale_step))
-        world_y2 = img_center_world_y + (self.screen_height/2)*(ZOOM_SCALE**(-scale_step))
-        self.get_screen_anchor(world_x1, world_y1, world_x2, world_y2,self.scale_step)
-        world_x1, world_y1, world_x2, world_y2 = self.get_boundaries(world_x1, world_y1, world_x2, world_y2,scale_step)
-        # print(world_x1-world_x2, world_y1-world_y2)
+        world_x1 = img_center_world_x - (self._screen_width/2)*(ZOOM_SCALE**(-scale_step))
+        world_y1 = img_center_world_y - (self._screen_height/2)*(ZOOM_SCALE**(-scale_step))
+        world_x2 = img_center_world_x + (self._screen_width/2)*(ZOOM_SCALE**(-scale_step))
+        world_y2 = img_center_world_y + (self._screen_height/2)*(ZOOM_SCALE**(-scale_step))
+        self._get_screen_anchor(world_x1, world_y1, world_x2, world_y2,self._scale_step)
+        world_x1, world_y1, world_x2, world_y2 = self._get_boundaries(world_x1, world_y1, world_x2, world_y2,scale_step)
         return world_x1, world_y1, world_x2, world_y2
 
-    def get_screen_anchor(self,world_x1, world_y1, world_x2, world_y2,scale_step):
+    def _get_screen_anchor(self,world_x1, world_y1, world_x2, world_y2,scale_step):
         dev_x, dev_y = 0,0
         if world_x1 < 0 and world_x2 > self.width:
             dev_x = (self.width - (world_x2 + world_x1))*(ZOOM_SCALE**(scale_step))
@@ -146,11 +140,11 @@ class Grid_Shapes():
             # dev_y = (world_x2 - self.width)*(ZOOM_SCALE**(scale_step))
 
 
-        self.screen_anchor_x = dev_x/2
-        self.screen_anchor_y = -dev_y/2
+        self._screen_anchor_x = dev_x/2
+        self._screen_anchor_y = -dev_y/2
         self._update_screen_center_world
 
-    def get_boundaries(self,world_x1, world_y1, world_x2, world_y2,scale_step):
+    def _get_boundaries(self,world_x1, world_y1, world_x2, world_y2,scale_step):
         if world_x1 < 0:
             world_x1 = 0
         if world_y1 < 0:
@@ -167,10 +161,9 @@ class Grid_Shapes():
 
 class Background(Grid_Shapes):
     def _resize_image(self,image,scale_step,dev_width =0,dev_height=0):
-        size = (self.screen_width-dev_width, self.screen_height-dev_height)
+        size = (self._screen_width-dev_width, self._screen_height-dev_height)
         size = (int(image.width*(ZOOM_SCALE**(scale_step))), int(image.height*(ZOOM_SCALE**(scale_step))))
         image = image.resize(size, pil.Image.BOX)
-        # print(image.width,image.height)
         return image
 
     @ staticmethod
@@ -188,29 +181,29 @@ class Background(Grid_Shapes):
     def add_background(self,filepath,type=""):
         self.filepath = filepath
         if type == 'pan':
-            image = self.crop_and_resize_image(self.primitive_image)
+            image = self._crop_and_resize_image(self._primitive_image)
         else:  
             image = self._add_new_image(filepath)
-            image = self.crop_and_resize_image(image)
+            image = self._crop_and_resize_image(image)
         self._to_canvas(image,0,0)
 
     def _add_new_image(self,filepath):
         image = self._create_image(filepath)
         self.width, self.height = image.width,image.height
-        self.primitive_image = image
+        self._primitive_image = image
         self.ratio_aspect = self._get_ratio_aspect(image.width,image.height)
         return image
 
-    def crop_and_resize_image(self,image):
-        cropped_img = self._crop_image(image,self.get_coor_from_image_center(self.screen_center_world_x, self.screen_center_world_y,self.scale_step))
-        resized_image = self._resize_image(cropped_img,self.scale_step)
+    def _crop_and_resize_image(self,image):
+        cropped_img = self._crop_image(image,self._get_coor_from_image_center(self._screen_center_world_x, self._screen_center_world_y,self._scale_step))
+        resized_image = self._resize_image(cropped_img,self._scale_step)
         return resized_image
 
     def _to_canvas(self,image,x=0,y=0):
         tk_image = pil.ImageTk.PhotoImage(image)
-        self.tk_temp_img = tk_image
-        self.bkgd = self.canvas.create_image(WorldGrid.world_to_screen(self.screen_anchor_x,self.screen_anchor_y,
-                                                                        0,self.screen_width,self.screen_height),anchor=CENTER,image=tk_image)
+        self._tk_temp_img = tk_image
+        self.bkgd = self._canvas.create_image(WorldGrid.world_to_screen(self._screen_anchor_x,self._screen_anchor_y,
+                                                                        0,self._screen_width,self._screen_height),anchor=CENTER,image=tk_image)
 
     def move(self,screen_center_world_x,screen_center_world_y):
         self.delete()
