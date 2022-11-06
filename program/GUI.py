@@ -26,14 +26,15 @@ def convert(file, outputDir):
     return myfile
 
 class HexColor(Enum):
-    BACKGROUND = '#414141'
+    BACKGROUND = '#2d2d2d'
     TITLE = '#222933'
     TOOLTAB = '#3B4453'
+    CANVAS_BACKGROUD = '#222831'
 class WindowCanvas():
     def __init__(self,root,width,height,row,column,sticky):
         self.width = width
         self.height = height
-        self.bkgd_color = 'grey'
+        self.bkgd_color = HexColor.CANVAS_BACKGROUD.value
         self.MAX_ZOOM = 30
         self.MIN_ZOOM = -25
         self.scale_step = 0
@@ -47,17 +48,15 @@ class WindowCanvas():
                         width=self.width,height=self.height, 
                         background=self.bkgd_color,
                         cursor='tcross',borderwidth=2,highlightthickness=0,relief=FLAT)
-        # self.canvas.grid(row=row,column=column,sticky=sticky)
-        self.canvas.pack()   
-        self.world_grid = WorldGrid(self.width,self.height,self.canvas)
+        self.canvas.grid(row=row,column=column,sticky=sticky)  
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
         self.canvas.bind("<B2-Motion>", self.pan_move)
         self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
         self.canvas.bind("<Motion>", self.hover_motion)
         self.canvas.bind("<Leave>", self.hover_leave)
         self.label = ttk.Label(root)
-        # self.label.grid(row=row,column=column,sticky=SE)
-        self.label.pack()
+        self.label.grid(row=row,column=column,sticky=SE)
+        self.world_grid = WorldGrid(self.width,self.height,self.canvas)
 
     def hover_motion(self,event):
             x,y = self.world_grid.screen_to_world(event.x,event.y,self.scale_step,self.width,self.height)
@@ -105,28 +104,39 @@ class WindowCanvas():
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
         self.world_grid.add_background(filepath)
 
-class TitleBar():
-    def __init__(self,root,width,height,row,column,sticky):
-        self.title_bar = Frame(root,relief='raised',background='white')
-        self.title_bar.pack(expand=1,fill=X)
-
-        self.title_label = ttk.Label(self.title_bar, text='Python Learning',relief='raised',border=0)
-        self.title_label.pack(side=LEFT,pady=4)
-
 class ToolBoxTab():
     def __init__(self,root,width,height,row,column,sticky):
         my_notebook = ttk.Notebook(root)
-        # my_notebook.grid(row=row,column=column,sticky=sticky)
-        my_notebook.pack()
+        my_notebook.grid(padx=5,pady=4)
 
         my_frame1 = ttk.Frame(my_notebook, width=width, height=height)
         my_frame2 = ttk.Frame(my_notebook, width=width, height=height)
+        my_frame3 = ttk.Frame(my_notebook, width=width, height=height)
 
-        my_frame1.pack(fill='both',expand=1)
-        my_frame2.pack(fill='both',expand=1)
+        my_frame1.grid(row=row,column=column,sticky=sticky)
+        my_frame2.grid(row=row,column=column,sticky=sticky)
+        my_frame3.grid(row=row,column=column,sticky=sticky)
 
-        my_notebook.add(my_frame1,text='blue')
-        my_notebook.add(my_frame2,text='red')
+        my_notebook.add(my_frame1,text='Home')
+        my_notebook.add(my_frame2,text='Insert')
+        my_notebook.add(my_frame3,text='Annotate')
+
+class PageTab():
+    def __init__(self,root,width,height,row,column,sticky):
+        my_notebook = ttk.Notebook(root)
+        my_notebook.grid(padx=5)
+
+        my_frame1 = ttk.Frame(my_notebook, width=width, height=height)
+        my_frame2 = ttk.Frame(my_notebook, width=width, height=height)
+        my_frame3 = ttk.Frame(my_notebook, width=width, height=height)
+
+        my_frame1.grid(row=row,column=column,sticky=sticky)
+        my_frame2.grid(row=row,column=column,sticky=sticky)
+        my_frame3.grid(row=row,column=column,sticky=sticky)
+
+        my_notebook.add(my_frame1,text='Home')
+        my_notebook.add(my_frame2,text='Insert')
+        my_notebook.add(my_frame3,text='Annotate')
 
 if __name__ == "__main__":
     
@@ -136,11 +146,12 @@ if __name__ == "__main__":
     root.title('Learn python')
     root.geometry('1500x1200')
     root.config(background=HexColor.BACKGROUND.value)
+    # root.config(background='white')
     root.iconbitmap("Image_Folder/icon.ico")
 
-    title_bar = TitleBar(root,1000,20,0,0,NW)
-    toolbox = ToolBoxTab(root,1000,100,1,0,N)
-    canvas = WindowCanvas(root,1000,600,2,0,S)
+    toolbox = ToolBoxTab(root,1490,100,1,0,N)
+    pagetab = PageTab(root,1490,1,1,0,N)
+    canvas = WindowCanvas(root,1490,600,2,0,S)
 
     #For testing
     canvas.world_grid.add_background('imag/B1.jpg')
