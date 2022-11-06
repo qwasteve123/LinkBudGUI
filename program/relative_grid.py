@@ -13,7 +13,6 @@ class WorldGrid():
         self.scale_step = 0
         self.canvas = canvas
         self.shape_list = []
-        # self.bkgd = 0
         self.screen_center_world_x = 0
         self.screen_center_world_y = 0       
 
@@ -103,7 +102,6 @@ class Grid_Shapes():
     def _world_to_image(self,world_x,world_y):
         img_world_x = world_x + self.width/2
         img_world_y = -world_y + self.height/2
-        print(img_world_x, img_world_y)
         return img_world_x, img_world_y
 
     def _update_screen_center_world(self,screen_center_world_x,screen_center_world_y):

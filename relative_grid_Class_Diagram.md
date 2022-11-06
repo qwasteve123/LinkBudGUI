@@ -2,7 +2,7 @@
 classDiagram
   direction LR
 
-   WorldGrid <|-- Grid_Shapes
+   WorldGrid -- Grid_Shapes
    Grid_Shapes <|-- Background
 
   class WorldGrid{
@@ -19,8 +19,8 @@ classDiagram
       +world_to_screen()
       +pan_move()
       +zoom()
-      +zoom_deviation()
-
+      
+      -_zoom_deviation()
       -_set_scale_step()
       -_set_screen_center_world()
       -_reset_screen_world_center()
