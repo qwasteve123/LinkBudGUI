@@ -1,4 +1,4 @@
-:::mermaid
+```mermaid
 classDiagram
   direction LR
 
@@ -71,4 +71,4 @@ classDiagram
       -_to_canvas()
     }
 
-:::
+```
