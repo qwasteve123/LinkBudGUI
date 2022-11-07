@@ -9,7 +9,9 @@ classDiagram
   class MainWindowTk{
   }
 
-   class WindowCanvas{
+
+
+  class WindowCanvas{
       +width
       +height
       +bkgd_color

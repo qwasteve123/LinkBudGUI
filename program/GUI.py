@@ -31,7 +31,7 @@ class HexColor(Enum):
     TOOLTAB = '#3B4453'
     CANVAS_BACKGROUD = '#222831'
 class WindowCanvas():
-    def __init__(self,root,width,height,row,column,sticky):
+    def __init__(self,app,width,height,row,column,sticky):
         self.width = width
         self.height = height
         self.bkgd_color = HexColor.CANVAS_BACKGROUD.value
@@ -43,8 +43,9 @@ class WindowCanvas():
         self.is_hover = False
         self.row = row
         self.column = column
+        self.app = app
 
-        self.canvas = Canvas(root, 
+        self.canvas = Canvas(app, 
                         width=self.width,height=self.height, 
                         background=self.bkgd_color,
                         cursor='tcross',borderwidth=2,highlightthickness=0,relief=FLAT)
@@ -54,8 +55,8 @@ class WindowCanvas():
         self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
         self.canvas.bind("<Motion>", self.hover_motion)
         self.canvas.bind("<Leave>", self.hover_leave)
-        self.label = ttk.Label(root)
-        self.label.grid(row=row,column=column,sticky=SE)
+        self.label = ttk.Label(app)
+        self.label.grid(row=row+1,column=column,sticky=SE)
         self.world_grid = WorldGrid(self.width,self.height,self.canvas)
 
     def hover_motion(self,event):
@@ -72,7 +73,7 @@ class WindowCanvas():
             self.label.grid_forget()
         else:
             center_x,center_y = int(center_x), int(center_y)
-            self.label.grid(row=self.row,column=self.column,sticky=SE)
+            self.label.grid(row=self.row+1,column=self.column,sticky=SE)
             self.label.config(text=f'Coordinates  x:{center_x}  y:{center_y}' )
 
     def mouse_wheel(self,event):
@@ -98,6 +99,7 @@ class WindowCanvas():
             self.x1, self.y1 = event.x, event.y
         except:
             self.x1, self.y1 = event.x, event.y
+        sleep(0.05)
         self.canvas.config(cursor='circle')
 
     def add_background(self):
@@ -123,20 +125,17 @@ class ToolBoxTab():
 
 class PageTab():
     def __init__(self,root,width,height,row,column,sticky):
-        my_notebook = ttk.Notebook(root)
-        my_notebook.grid(padx=5)
+        self.my_notebook = ttk.Notebook(root)
+        self.my_notebook.grid(padx=5)
 
-        my_frame1 = ttk.Frame(my_notebook, width=width, height=height)
-        my_frame2 = ttk.Frame(my_notebook, width=width, height=height)
-        my_frame3 = ttk.Frame(my_notebook, width=width, height=height)
+        self.page_frame = ttk.Frame(self.my_notebook, width=width, height=height,relief='raise')
+        self.add_frame = ttk.Frame(self.my_notebook, width=width, height=height,relief='raise')
 
-        my_frame1.grid(row=row,column=column,sticky=sticky)
-        my_frame2.grid(row=row,column=column,sticky=sticky)
-        my_frame3.grid(row=row,column=column,sticky=sticky)
+        self.page_frame.grid(row=row,column=column,sticky=sticky)
+        self.add_frame.grid(row=row,column=column,sticky=sticky)
 
-        my_notebook.add(my_frame1,text='Home')
-        my_notebook.add(my_frame2,text='Insert')
-        my_notebook.add(my_frame3,text='Annotate')
+        self.my_notebook.add(self.page_frame,text='Home')
+        self.my_notebook.add(self.add_frame,text='+')
 
 if __name__ == "__main__":
     
@@ -151,7 +150,7 @@ if __name__ == "__main__":
 
     toolbox = ToolBoxTab(root,1490,100,1,0,N)
     pagetab = PageTab(root,1490,1,1,0,N)
-    canvas = WindowCanvas(root,1490,600,2,0,S)
+    canvas = WindowCanvas(pagetab.page_frame,1490,600,2,0,S)
 
     #For testing
     canvas.world_grid.add_background('imag/B1.jpg')
