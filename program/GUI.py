@@ -2,12 +2,13 @@ from tkinter import filedialog
 from tkinter import *
 from tkinter import ttk
 from ttkthemes import ThemedStyle
-from pdf2image import convert_from_path
+# from pdf2image import convert_from_path
 from enum import Enum
 import os
 import time
 from PIL import ImageTk,Image
 from relative_grid import *
+
 
 
 
@@ -44,19 +45,24 @@ class WindowCanvas():
         self.row = row
         self.column = column
         self.app = app
+        self.left_click_mode = 'pan'
 
         self.canvas = Canvas(app, 
                         width=self.width,height=self.height, 
                         background=self.bkgd_color,
-                        cursor='tcross',borderwidth=2,highlightthickness=0,relief=FLAT)
-        self.canvas.grid(row=row,column=column,sticky=sticky)  
+                        cursor='tcross',borderwidth=0,highlightthickness=0,
+                        relief=FLAT)
+        self.canvas.grid(row=row,column=column,columnspan=2,sticky=sticky)  
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
-        self.canvas.bind("<B2-Motion>", self.pan_move)
-        self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
+        self.canvas.bind("<B1-Motion>", self.pan_move)
+        self.canvas.bind("<B1-ButtonRelease>", self.pan_release)
+        self.canvas.bind("<Button-3>", self.drawline)
         self.canvas.bind("<Motion>", self.hover_motion)
         self.canvas.bind("<Leave>", self.hover_leave)
-        self.label = ttk.Label(app)
-        self.label.grid(row=row+1,column=column,sticky=SE)
+        self.label_coor = ttk.Label(app,text='Coordinates  x: ---  y: ---')
+        self.label_coor.grid(row=row,column=column+1,sticky=SE)
+        self.label_status = ttk.Label(app,text='Status: pan')
+        self.label_status.grid(row=row,column=column,sticky=SW)
         self.world_grid = WorldGrid(self.width,self.height,self.canvas)
 
     def hover_motion(self,event):
@@ -70,11 +76,11 @@ class WindowCanvas():
 
     def change_label(self,center_x,center_y):
         if center_x == "":
-            self.label.grid_forget()
+            self.label_coor.config(text='Coordinates  x: ---  y: ---' )
         else:
             center_x,center_y = int(center_x), int(center_y)
-            self.label.grid(row=self.row+1,column=self.column,sticky=SE)
-            self.label.config(text=f'Coordinates  x:{center_x}  y:{center_y}' )
+            self.label_coor.grid(row=self.row,column=self.column+1,sticky=SE)
+            self.label_coor.config(text=f'Coordinates  x:{center_x}  y:{center_y}' )
 
     def mouse_wheel(self,event):
         zoom_in = 0
@@ -89,16 +95,16 @@ class WindowCanvas():
         self.world_grid.zoom(event.x,event.y,zoom_in)
 
     def pan_release(self,event):
-        self.x1, self.y1 = None, None
+        self.pan_x1, self.pan_y1 = None, None
         self.canvas.config(cursor='tcross')
 
     def pan_move(self,event):
         try:
             x2, y2 = event.x, event.y
-            self.world_grid.pan_move(x2-self.x1, self.y1-y2)
-            self.x1, self.y1 = event.x, event.y
+            self.world_grid.pan_move(x2-self.pan_x1, self.pan_y1-y2)
+            self.pan_x1, self.pan_y1 = event.x, event.y
         except:
-            self.x1, self.y1 = event.x, event.y
+            self.pan_x1, self.pan_y1 = event.x, event.y
         sleep(0.05)
         self.canvas.config(cursor='circle')
 
@@ -106,10 +112,28 @@ class WindowCanvas():
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
         self.world_grid.add_background(filepath)
 
+    def drawline(self,event):
+        try:
+            x2, y2 = event.x, event.y
+            # self.world_grid.draw_line(self.draw_x1,self.draw_y1-y2,x2,y2)
+            print(self.draw_x1,self.draw_y1-y2,x2,y2)
+            self.canvas.create_line(self.draw_x1,self.draw_y1,x2,y2)
+            self.draw_x1, self.draw_y1 = event.x, event.y
+        except:
+            self.draw_x1, self.draw_y1 = event.x, event.y
+
+    # def drawline_end(self,event):
+    #     self.draw_x1, self.draw_y1 = None, None
+
+    def change_draw_label(self):
+        self.label_status.config(text='Status: s_line Specify first point')
+
+
+
 class ToolBoxTab():
-    def __init__(self,root,width,height,row,column,sticky):
+    def __init__(self,root,width,height,row,column,sticky,rowspan=1,columnspan =1):
         my_notebook = ttk.Notebook(root)
-        my_notebook.grid(padx=5,pady=4)
+        my_notebook.grid(padx=5,pady=4,rowspan=rowspan,columnspan=columnspan)
 
         my_frame1 = ttk.Frame(my_notebook, width=width, height=height)
         my_frame2 = ttk.Frame(my_notebook, width=width, height=height)
@@ -123,10 +147,13 @@ class ToolBoxTab():
         my_notebook.add(my_frame2,text='Insert')
         my_notebook.add(my_frame3,text='Annotate')
 
+        f1_button = ttk.Button(my_frame1,text= 'hihi',command=lambda:canvas.change_draw_label())
+        f1_button.grid(row=0,column=0,sticky=W)
+
 class PageTab():
-    def __init__(self,root,width,height,row,column,sticky):
+    def __init__(self,root,width,height,row,column,sticky,rowspan=1,columnspan =1):
         self.my_notebook = ttk.Notebook(root)
-        self.my_notebook.grid(padx=5)
+        self.my_notebook.grid(padx=5,sticky=sticky,rowspan=rowspan,columnspan=columnspan)
 
         self.page_frame = ttk.Frame(self.my_notebook, width=width, height=height,relief='raise')
         self.add_frame = ttk.Frame(self.my_notebook, width=width, height=height,relief='raise')
@@ -143,16 +170,23 @@ if __name__ == "__main__":
     style = ThemedStyle(root)
     style.set_theme('equilux')
     root.title('Learn python')
-    root.geometry('1500x1200')
+
+    # set window as screen width and height
+    width , height = int(root.winfo_screenwidth()), int(root.winfo_screenheight())
+    print(width,height)
+    root.geometry(f'{width}x{height}')
+    root.state('zoomed')
+
     root.config(background=HexColor.BACKGROUND.value)
     # root.config(background='white')
     root.iconbitmap("Image_Folder/icon.ico")
+    width,height=root.winfo_width(),root.winfo_height()
 
-    toolbox = ToolBoxTab(root,1490,100,1,0,N)
-    pagetab = PageTab(root,1490,1,1,0,N)
-    canvas = WindowCanvas(pagetab.page_frame,1490,600,2,0,S)
 
-    #For testing
+    toolbox = ToolBoxTab(root,width-10,100,1,0,N,1,2)
+    pagetab = PageTab(root,1,1,1,0,SW)
+    canvas = WindowCanvas(pagetab.page_frame,width * 0.7,height-190,2,0,SW)
+
     canvas.world_grid.add_background('imag/B1.jpg')
 
     root.mainloop()
