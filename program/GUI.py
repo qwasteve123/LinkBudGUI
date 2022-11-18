@@ -115,9 +115,9 @@ class WindowCanvas():
     def drawline(self,event):
         try:
             x2, y2 = event.x, event.y
-            # self.world_grid.draw_line(self.draw_x1,self.draw_y1-y2,x2,y2)
-            print(self.draw_x1,self.draw_y1-y2,x2,y2)
-            self.canvas.create_line(self.draw_x1,self.draw_y1,x2,y2)
+            self.world_grid.draw_line(self.draw_x1,self.draw_y1-y2,x2,y2)
+            # print(self.draw_x1,self.draw_y1-y2,x2,y2)
+            # self.canvas.create_line(self.draw_x1,self.draw_y1,x2,y2)
             self.draw_x1, self.draw_y1 = event.x, event.y
         except:
             self.draw_x1, self.draw_y1 = event.x, event.y

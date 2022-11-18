@@ -22,6 +22,11 @@ class WorldGrid():
     def _set_scale_step(self,scale_step):
         self.scale_step = scale_step
 
+    # Add lines to world
+    def draw_s_line(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
+        line = Straight_Lines(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+        self.shape_list.append(line)
+
     # Add CAD image file as background
     def add_background(self,filepath):
         self._reset_screen_world_center()
@@ -239,7 +244,8 @@ class Background(Grid_Shapes):
         self.add_background(self.filepath,'pan')
 
 class Straight_Lines(Grid_Shapes):
-    
+    def __init__(anchor_x1,anchor_y1,anchor_x2,anchor_y2):
+        pass
 
 
 if __name__ == "__main__":
