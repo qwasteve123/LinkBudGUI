@@ -158,7 +158,6 @@ class Grid_Shapes():
             dev_y = (-world_y1)*(ZOOM_SCALE**(scale_step))
             # dev_y = (world_x2 - self.width)*(ZOOM_SCALE**(scale_step))
 
-
         self._screen_anchor_x = dev_x/2
         self._screen_anchor_y = -dev_y/2
         self._update_screen_center_world
@@ -173,8 +172,6 @@ class Grid_Shapes():
         if world_y2 > self.height:
             world_y2 = self.height
         return (world_x1, world_y1, world_x2, world_y2)
-
-
 
 ###########################################################
 # Inherit GridShapes, responsible for image cropping, resizing and showing on canvas
@@ -257,18 +254,29 @@ class Straight_Lines(Grid_Shapes):
         self.world_anchor_y1 = self._screen_center_world_y + an_y1
         self.world_anchor_x2 = self._screen_center_world_x + an_x2
         self.world_anchor_y2 = self._screen_center_world_y + an_y2
+        self.x1, self.y1 = x1, y1
+        self.x2, self.y2 = x2, y2
 
     def move(self,screen_center_world_x,screen_center_world_y):
-        pass
-        # self._canvas.create_line(anchor_x1,anchor_y1,anchor_x2,anchor_y2, fill= fill, width=width)
+        self.delete()
+        dev_x= screen_center_world_x - self._screen_center_world_x
+        dev_y= screen_center_world_y - self._screen_center_world_y
+        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+        self._update_screen_anchors(dev_x,dev_y)
+        self._canvas.create_line(self.x1,self.y1,self.x2,self.y2, fill= 'black', width=2)
 
     def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
         self.delete()
+        self._update_scale_step(scale_step)
         # self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         # self._update_scale_step(scale_step)
 
-
-
+    def _update_screen_anchors(self,dev_x,dev_y):
+        dev_x, dev_y = dev_x*(ZOOM_SCALE**self._scale_step), dev_y*(ZOOM_SCALE**self._scale_step)
+        self.x1 -= dev_x
+        self.y1 += dev_y
+        self.x2 -= dev_x
+        self.y2 += dev_y
 
 if __name__ == "__main__":
     pass
