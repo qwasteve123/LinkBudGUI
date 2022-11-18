@@ -34,6 +34,9 @@ class WorldGrid():
             self.shape_list.append(self.background)
             self.background.add_background(filepath)
 
+    def add_straight_line():
+        pass
+
     # set the world coordinate that the screen center showing
     def _set_screen_center_world(self,dev_x: float =0 ,dev_y: float=0):
         try:
@@ -239,6 +242,7 @@ class Background(Grid_Shapes):
         self.add_background(self.filepath,'pan')
 
 class Straight_Lines(Grid_Shapes):
+    pass
     
 
 
