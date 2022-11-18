@@ -2,7 +2,7 @@ from tkinter import filedialog
 from tkinter import *
 from tkinter import ttk
 from ttkthemes import ThemedStyle
-# from pdf2image import convert_from_path
+# from pdf2image import convert_fr om_path
 from enum import Enum
 import os
 import time
@@ -70,7 +70,7 @@ class WindowCanvas():
             x += self.world_grid.screen_center_world_x
             y += self.world_grid.screen_center_world_y
             self.change_label(x,y)
-
+            
     def hover_leave(self,event):
         self.change_label("","")
 
@@ -115,11 +115,10 @@ class WindowCanvas():
     def drawline(self,event):
         try:
             x2, y2 = event.x, event.y
-            # self.world_grid.draw_line(self.draw_x1,self.draw_y1-y2,x2,y2)
-            print(self.draw_x1,self.draw_y1-y2,x2,y2)
-            self.canvas.create_line(self.draw_x1,self.draw_y1,x2,y2)
+            self.world_grid.draw_s_line(0,0,100,100)
             self.draw_x1, self.draw_y1 = event.x, event.y
         except:
+            self.world_grid.draw_s_line(0,0,100,100)
             self.draw_x1, self.draw_y1 = event.x, event.y
 
     # def drawline_end(self,event):
@@ -173,7 +172,6 @@ if __name__ == "__main__":
 
     # set window as screen width and height
     width , height = int(root.winfo_screenwidth()), int(root.winfo_screenheight())
-    print(width,height)
     root.geometry(f'{width}x{height}')
     root.state('zoomed')
 

@@ -22,6 +22,14 @@ class WorldGrid():
     def _set_scale_step(self,scale_step):
         self.scale_step = scale_step
 
+    # Add lines to world
+    def draw_s_line(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
+        line = Straight_Lines(self.canvas,self.screen_width,self.screen_height,self.scale_step,
+                                screen_center_world_x = self.screen_center_world_x,
+                                screen_center_world_y = self.screen_center_world_y)
+        self.shape_list.append(line)
+        line.draw_line(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+
     # Add CAD image file as background
     def add_background(self,filepath):
         self._reset_screen_world_center()
@@ -77,8 +85,8 @@ class WorldGrid():
 
     # pan move all shapes i.e. background, lines and others
     def pan_move(self,x_dev,y_dev):
+        self._set_screen_center_world(x_dev,y_dev)
         for shape in self.shape_list:
-            self._set_screen_center_world(x_dev,y_dev)
             shape.move(self.screen_center_world_x,self.screen_center_world_y)
 
     # zoom all shapes
@@ -99,7 +107,7 @@ class WorldGrid():
 # Common GridShapes inherited by other shapes. 
 # Get screen center from World_Grid and help shapes showcase.
 class Grid_Shapes():
-    def __init__(self,canvas,screen_width,screen_height,scale_step,anchor_x,anchor_y,screen_center_world_x=0,screen_center_world_y=0):
+    def __init__(self,canvas,screen_width,screen_height,scale_step,anchor_x =0,anchor_y =0,screen_center_world_x=0,screen_center_world_y=0):
         self._screen_width = screen_width
         self._screen_height = screen_height
         self._canvas = canvas
@@ -110,7 +118,7 @@ class Grid_Shapes():
         self._screen_center_world_x, self._screen_center_world_y = screen_center_world_x,screen_center_world_y
 
     def delete(self):
-        self._canvas.delete(self.bkgd)
+        self._canvas.delete(self.id)
 
     # Input screen_center_world return image center
     def _world_to_image(self,world_x,world_y):
@@ -153,7 +161,6 @@ class Grid_Shapes():
             dev_y = (-world_y1)*(ZOOM_SCALE**(scale_step))
             # dev_y = (world_x2 - self.width)*(ZOOM_SCALE**(scale_step))
 
-
         self._screen_anchor_x = dev_x/2
         self._screen_anchor_y = -dev_y/2
         self._update_screen_center_world
@@ -168,8 +175,6 @@ class Grid_Shapes():
         if world_y2 > self.height:
             world_y2 = self.height
         return (world_x1, world_y1, world_x2, world_y2)
-
-
 
 ###########################################################
 # Inherit GridShapes, responsible for image cropping, resizing and showing on canvas
@@ -226,8 +231,10 @@ class Background(Grid_Shapes):
     def _to_canvas(self,image,x=0,y=0):
         tk_image = pil.ImageTk.PhotoImage(image)
         self._tk_temp_img = tk_image
-        self.bkgd = self._canvas.create_image(WorldGrid.world_to_screen(self._screen_anchor_x,self._screen_anchor_y,
-                                                                        0,self._screen_width,self._screen_height),anchor=CENTER,image=tk_image)
+        self.id = self._canvas.create_image(WorldGrid.world_to_screen(self._screen_anchor_x,self._screen_anchor_y,
+                                                                        0,self._screen_width,self._screen_height),
+                                                                        anchor=CENTER,image=tk_image,
+                                                                        tag=('bkgd'))
 
     # pan move of 
     def move(self,screen_center_world_x,screen_center_world_y):
@@ -242,9 +249,37 @@ class Background(Grid_Shapes):
         self.add_background(self.filepath,'pan')
 
 class Straight_Lines(Grid_Shapes):
-    pass
-    
+    def draw_line(self,x1,y1,x2,y2,fill='black',width=2):
+        self.id = self._canvas.create_line(x1,y1,x2,y2, fill= fill, width=width)
+        an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
+        an_x2,an_y2 = WorldGrid.screen_to_world(x2,y2,-self._scale_step,self._screen_width,self._screen_height)
+        self.world_anchor_x1 = self._screen_center_world_x + an_x1
+        self.world_anchor_y1 = self._screen_center_world_y + an_y1
+        self.world_anchor_x2 = self._screen_center_world_x + an_x2
+        self.world_anchor_y2 = self._screen_center_world_y + an_y2
+        self.x1, self.y1 = x1, y1
+        self.x2, self.y2 = x2, y2
 
+    def move(self,screen_center_world_x,screen_center_world_y):
+        self.delete()
+        dev_x= screen_center_world_x - self._screen_center_world_x
+        dev_y= screen_center_world_y - self._screen_center_world_y
+        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+        self._update_screen_anchors(dev_x,dev_y)
+        self._canvas.create_line(self.x1,self.y1,self.x2,self.y2, fill= 'black', width=2)
+
+    def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
+        self.delete()
+        self._update_scale_step(scale_step)
+        # self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+        # self._update_scale_step(scale_step)
+
+    def _update_screen_anchors(self,dev_x,dev_y):
+        dev_x, dev_y = dev_x*(ZOOM_SCALE**self._scale_step), dev_y*(ZOOM_SCALE**self._scale_step)
+        self.x1 -= dev_x
+        self.y1 += dev_y
+        self.x2 -= dev_x
+        self.y2 += dev_y
 
 if __name__ == "__main__":
     pass

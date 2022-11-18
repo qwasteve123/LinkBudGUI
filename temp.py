@@ -7,8 +7,6 @@ root.title("Title")
 root.geometry("600x600")
 root.configure(background="black")
 
-
-
 class Example(Frame):
     def __init__(self, master, *pargs):
         Frame.__init__(self, master, *pargs)
@@ -17,7 +15,6 @@ class Example(Frame):
 
         self.image = Image.open("imag/Capture.JPG")
         self.img_copy= self.image.copy()
-
 
         self.background_image = ImageTk.PhotoImage(self.image)
 
