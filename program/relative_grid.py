@@ -86,10 +86,8 @@ class WorldGrid():
     # pan move all shapes i.e. background, lines and others
     def pan_move(self,x_dev,y_dev):
         self._set_screen_center_world(x_dev,y_dev)
-        print('move')
         for shape in self.shape_list:
             shape.move(self.screen_center_world_x,self.screen_center_world_y)
-            print(type(shape))
 
     # zoom all shapes
     def zoom(self,event_x,event_y,zoom_in):
@@ -266,24 +264,24 @@ class Straight_Lines(Grid_Shapes):
 
     def move(self,screen_center_world_x,screen_center_world_y):
         self.delete()
-        dev_x= screen_center_world_x - self._screen_center_world_x
-        dev_y= screen_center_world_y - self._screen_center_world_y
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
-        self._update_screen_anchors(dev_x,dev_y)
+        self._update_screen_anchors()
         self.id = self._canvas.create_line(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
-        # self.delete()
+        self.delete()
         self._update_scale_step(scale_step)
-        # self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
-        # self._update_scale_step(scale_step)
+        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+        self._update_screen_anchors()
+        self.id = self._canvas.create_line(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
-    def _update_screen_anchors(self,dev_x,dev_y):
-        dev_x, dev_y = dev_x*(ZOOM_SCALE**self._scale_step), dev_y*(ZOOM_SCALE**self._scale_step)
-        self.x1 -= dev_x
-        self.y1 += dev_y
-        self.x2 -= dev_x
-        self.y2 += dev_y
+    def _update_screen_anchors(self):
+        x1 = self.world_anchor_x1 - self._screen_center_world_x
+        y1 = self.world_anchor_y1 - self._screen_center_world_y
+        x2 = self.world_anchor_x2 - self._screen_center_world_x
+        y2 = self.world_anchor_y2 - self._screen_center_world_y
+        self.x1, self.y1 = WorldGrid.world_to_screen(x1,y1,self._scale_step,self._screen_width,self._screen_height)
+        self.x2, self.y2 = WorldGrid.world_to_screen(x2,y2,self._scale_step,self._screen_width,self._screen_height)
 
 if __name__ == "__main__":
     pass
