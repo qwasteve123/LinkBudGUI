@@ -56,6 +56,8 @@ class WindowCanvas():
         self.canvas.bind("<MouseWheel>", self.mouse_wheel)
         self.canvas.bind("<B1-Motion>", self.pan_move)
         self.canvas.bind("<B1-ButtonRelease>", self.pan_release)
+        self.canvas.bind("<B2-Motion>", self.pan_move)
+        self.canvas.bind("<B2-ButtonRelease>", self.pan_release)        
         self.canvas.bind("<Button-3>", self.drawline)
         self.canvas.bind("<Motion>", self.hover_motion)
         self.canvas.bind("<Leave>", self.hover_leave)
@@ -113,13 +115,15 @@ class WindowCanvas():
         self.world_grid.add_background(filepath)
 
     def drawline(self,event):
-        try:
-            x2, y2 = event.x, event.y
-            self.world_grid.draw_s_line(0,0,100,100)
-            self.draw_x1, self.draw_y1 = event.x, event.y
-        except:
-            self.world_grid.draw_s_line(0,0,100,100)
-            self.draw_x1, self.draw_y1 = event.x, event.y
+        # try:
+        #     x2, y2 = event.x, event.y
+        #     self.world_grid.draw_s_line(0,0,100,100)
+        #     self.draw_x1, self.draw_y1 = event.x, event.y
+        # except:
+        #     self.world_grid.draw_s_line(0,0,100,100)
+        #     self.draw_x1, self.draw_y1 = event.x, event.y
+        
+        self.world_grid.draw_s_line(0,0,100,100)
 
     # def drawline_end(self,event):
     #     self.draw_x1, self.draw_y1 = None, None

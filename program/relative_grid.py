@@ -86,8 +86,10 @@ class WorldGrid():
     # pan move all shapes i.e. background, lines and others
     def pan_move(self,x_dev,y_dev):
         self._set_screen_center_world(x_dev,y_dev)
+        print('move')
         for shape in self.shape_list:
             shape.move(self.screen_center_world_x,self.screen_center_world_y)
+            print(type(shape))
 
     # zoom all shapes
     def zoom(self,event_x,event_y,zoom_in):
@@ -118,6 +120,7 @@ class Grid_Shapes():
         self._screen_center_world_x, self._screen_center_world_y = screen_center_world_x,screen_center_world_y
 
     def delete(self):
+        print(self.id)
         self._canvas.delete(self.id)
 
     # Input screen_center_world return image center
@@ -250,6 +253,7 @@ class Background(Grid_Shapes):
 
 class Straight_Lines(Grid_Shapes):
     def draw_line(self,x1,y1,x2,y2,fill='black',width=2):
+        self.fill, self.width = fill, width
         self.id = self._canvas.create_line(x1,y1,x2,y2, fill= fill, width=width)
         an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
         an_x2,an_y2 = WorldGrid.screen_to_world(x2,y2,-self._scale_step,self._screen_width,self._screen_height)
@@ -266,10 +270,10 @@ class Straight_Lines(Grid_Shapes):
         dev_y= screen_center_world_y - self._screen_center_world_y
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         self._update_screen_anchors(dev_x,dev_y)
-        self._canvas.create_line(self.x1,self.y1,self.x2,self.y2, fill= 'black', width=2)
+        self.id = self._canvas.create_line(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
-        self.delete()
+        # self.delete()
         self._update_scale_step(scale_step)
         # self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         # self._update_scale_step(scale_step)
