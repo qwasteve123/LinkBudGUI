@@ -115,15 +115,13 @@ class WindowCanvas():
         self.world_grid.add_background(filepath)
 
     def drawline(self,event):
-        # try:
-        #     x2, y2 = event.x, event.y
-        #     self.world_grid.draw_s_line(0,0,100,100)
-        #     self.draw_x1, self.draw_y1 = event.x, event.y
-        # except:
-        #     self.world_grid.draw_s_line(0,0,100,100)
-        #     self.draw_x1, self.draw_y1 = event.x, event.y
-        
-        self.world_grid.draw_s_line(0,0,100,100)
+        try:
+            x2, y2 = event.x, event.y
+            self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,x2,y2)
+            self.draw_x1, self.draw_y1 = event.x, event.y
+            self.draw_x1, self.draw_y1 = None,None
+        except:
+            self.draw_x1, self.draw_y1 = event.x, event.y
 
     # def drawline_end(self,event):
     #     self.draw_x1, self.draw_y1 = None, None
