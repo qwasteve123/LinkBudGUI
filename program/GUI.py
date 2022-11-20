@@ -46,6 +46,7 @@ class WindowCanvas():
         self.column = column
         self.app = app
         self.left_click_mode = 'pan'
+        self.draw_x1, self.draw_y1 = None,None
 
         self.canvas = Canvas(app, 
                         width=self.width,height=self.height, 
@@ -115,13 +116,13 @@ class WindowCanvas():
         self.world_grid.add_background(filepath)
 
     def drawline(self,event):
-        try:
+        if self.draw_x1 == None:
+            self.draw_x1, self.draw_y1 = event.x, event.y
+        else:
             x2, y2 = event.x, event.y
             self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,x2,y2)
-            self.draw_x1, self.draw_y1 = event.x, event.y
+            # self.draw_x1, self.draw_y1 = event.x, event.y
             self.draw_x1, self.draw_y1 = None,None
-        except:
-            self.draw_x1, self.draw_y1 = event.x, event.y
 
     # def drawline_end(self,event):
     #     self.draw_x1, self.draw_y1 = None, None
@@ -187,7 +188,7 @@ if __name__ == "__main__":
     pagetab = PageTab(root,1,1,1,0,SW)
     canvas = WindowCanvas(pagetab.page_frame,width * 0.7,height-190,2,0,SW)
 
-    canvas.world_grid.add_background('imag/B1.jpg')
+    # canvas.world_grid.add_background('imag/B1.jpg')
 
     root.mainloop()
 

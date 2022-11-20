@@ -86,7 +86,9 @@ class WorldGrid():
     # pan move all shapes i.e. background, lines and others
     def pan_move(self,x_dev,y_dev):
         self._set_screen_center_world(x_dev,y_dev)
+        print('move')
         for shape in self.shape_list:
+            print(type(shape), shape.id)
             shape.move(self.screen_center_world_x,self.screen_center_world_y)
 
     # zoom all shapes
@@ -118,7 +120,6 @@ class Grid_Shapes():
         self._screen_center_world_x, self._screen_center_world_y = screen_center_world_x,screen_center_world_y
 
     def delete(self):
-        print(self.id)
         self._canvas.delete(self.id)
 
     # Input screen_center_world return image center
