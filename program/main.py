@@ -10,6 +10,9 @@ from PIL import ImageTk,Image
 from relative_grid import *
 from canvas import *
 
+
+
+
 def convert(file, outputDir):
     outputDir = outputDir + str(round(time.time())) + '/'
     if not os.path.exists(outputDir):
@@ -30,7 +33,6 @@ class HexColor(Enum):
     TOOLTAB = '#3B4453'
     CANVAS_BACKGROUD = '#222831'
 
-
 class ToolBoxTab():
     def __init__(self,root,width,height,row,column,sticky,rowspan=1,columnspan =1):
         my_notebook = ttk.Notebook(root)
@@ -48,7 +50,7 @@ class ToolBoxTab():
         my_notebook.add(my_frame2,text='Insert')
         my_notebook.add(my_frame3,text='Annotate')
 
-        f1_button = ttk.Button(my_frame1,text= 'hihi',command=lambda:canvas.draw_shape.change_draw_label())
+        f1_button = ttk.Button(my_frame1,text= 'hihi',command=lambda:canvas.change_draw_label())
         f1_button.grid(row=0,column=0,sticky=W)
 
 class PageTab():
@@ -90,5 +92,3 @@ if __name__ == "__main__":
     canvas.world_grid.add_background('imag/B1.jpg')
 
     root.mainloop()
-
-    
