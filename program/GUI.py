@@ -58,8 +58,10 @@ class WindowCanvas():
         self.canvas.bind("<B1-Motion>", self.pan_move)
         self.canvas.bind("<B1-ButtonRelease>", self.pan_release)
         self.canvas.bind("<B2-Motion>", self.pan_move)
-        self.canvas.bind("<B2-ButtonRelease>", self.pan_release)        
+        self.canvas.bind("<B2-ButtonRelease>", self.pan_release)
         self.canvas.bind("<Button-3>", self.drawline)
+        self.canvas.bind("a",self.draw_rectangle)
+        self.canvas.bind("<Control-A>",self.showkey)
         self.canvas.bind("<Motion>", self.hover_motion)
         self.canvas.bind("<Leave>", self.hover_leave)
         self.label_coor = ttk.Label(app,text='Coordinates  x: ---  y: ---')
@@ -67,12 +69,14 @@ class WindowCanvas():
         self.label_status = ttk.Label(app,text='Status: pan')
         self.label_status.grid(row=row,column=column,sticky=SW)
         self.world_grid = WorldGrid(self.width,self.height,self.canvas)
+    def showkey(self,event):
+        print(event.keysym)
 
     def hover_motion(self,event):
-            x,y = self.world_grid.screen_to_world(event.x,event.y,self.scale_step,self.width,self.height)
-            x += self.world_grid.screen_center_world_x
-            y += self.world_grid.screen_center_world_y
-            self.change_label(x,y)
+        x,y = self.world_grid.screen_to_world(event.x,event.y,self.scale_step,self.width,self.height)
+        x += self.world_grid.screen_center_world_x
+        y += self.world_grid.screen_center_world_y
+        self.change_label(x,y)
             
     def hover_leave(self,event):
         self.change_label("","")
@@ -121,7 +125,15 @@ class WindowCanvas():
         else:
             x2, y2 = event.x, event.y
             self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,x2,y2)
-            # self.draw_x1, self.draw_y1 = event.x, event.y
+            self.draw_x1, self.draw_y1 = None,None
+
+    def draw_rectangle(self,event):
+        print('a')
+        if self.draw_x1 == None:
+            self.draw_x1, self.draw_y1 = event.x, event.y
+        else:
+            x2, y2 = event.x, event.y
+            self.world_grid.draw_rectangle(self.draw_x1,self.draw_y1,x2,y2)
             self.draw_x1, self.draw_y1 = None,None
 
     # def drawline_end(self,event):
