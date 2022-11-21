@@ -22,14 +22,17 @@ class WorldGrid():
     def _set_scale_step(self,scale_step):
         self.scale_step = scale_step
 
+    def draw_coupler(self,anchor_x1,anchor_y1):
+        line = Coupler(self,anchor_x1,anchor_y1)
+
     # Add lines to world
     def draw_s_line(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
         line = Straight_Lines(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
-        self.shape_list.append(line)
+        # self.shape_list.append(line)
 
     def draw_rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
-        line = Rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
-        self.shape_list.append(line)
+        rectangle = Rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+        # self.shape_list.append(rectangle)
         # line.draw_rectangle(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
 
     # Add CAD image file as background
@@ -42,7 +45,7 @@ class WorldGrid():
         except:
             self.background = Background(self)
             self.background.add_background(filepath)
-            self.shape_list.append(self.background)
+            # self.shape_list.append(self.background)
 
     # set the world coordinate that the screen center showing
     def _set_screen_center_world(self,dev_x: float =0 ,dev_y: float=0):
@@ -119,6 +122,11 @@ class Grid_Shapes():
         self.width, self.height = 0,0
         self._screen_anchor_x, self._screen_anchor_y = 0,0
         self.world_anchor_x, self.world_anchor_y = anchor_x,anchor_y
+
+        self.append_list(world_grid)
+
+    def append_list(self,world_grid):
+        world_grid.shape_list.append(self)
 
     def delete(self):
         self._canvas.delete(self.id)
@@ -302,6 +310,21 @@ class Rectangle(Straight_Lines):
         
     def _create(self,x1,y1,x2,y2,fill,width):
         self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width)
+
+class Coupler():
+    def __init__(self, world_grid: WorldGrid, anchor_x=0, anchor_y=0):
+        self.draw(world_grid,anchor_x,anchor_y)
+
+    def draw(self,world_grid: WorldGrid,anchor_x,anchor_y):
+        world_grid.draw_rectangle(anchor_x-10, anchor_y-5,anchor_x+10, anchor_y+5)
+        world_grid.draw_s_line(anchor_x,anchor_y,anchor_x,anchor_y+10)
+        world_grid.draw_s_line(anchor_x,anchor_y,anchor_x+7,anchor_y)
+    
+    def _set_attribute(self,x1,y1):
+        an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
+        self.world_anchor_x1 = self._screen_center_world_x + an_x1
+        self.world_anchor_y1 = self._screen_center_world_y + an_y1
+        self.x1, self.y1 = x1, y1
 
 if __name__ == "__main__":
     pass

@@ -53,6 +53,7 @@ class WindowCanvas():
         self.draw_shape = DrawShape(self)
         self.canvas.bind("<Button-3>", self.draw_shape.drawline)
         self.canvas.bind("a",self.draw_shape.draw_rectangle)
+        self.canvas.bind("b",self.draw_shape.draw_coupler)
 
         # set canvas as focus when mouse pointer enter canvas
         self.canvas.bind("<Enter>",self.set_focus)
@@ -155,12 +156,7 @@ class DrawShape():
             self.draw_x1, self.draw_y1 = None,None
 
     def draw_coupler(self,event):
-        if self.draw_x1 == None:
-            self.draw_x1, self.draw_y1 = event.x, event.y
-        else:
-            x2, y2 = event.x, event.y
-            self.world_grid.draw_rectangle(self.draw_x1,self.draw_y1,x2,y2)
-            self.draw_x1, self.draw_y1 = None,None
+        self.world_grid.draw_coupler(event.x,event.y)
 
     def change_draw_label(self):
         self.label_status.config(text='Status: s_line Specify first point')
