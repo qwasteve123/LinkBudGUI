@@ -26,16 +26,16 @@ class WindowCanvas():
                         cursor='tcross',borderwidth=0,highlightthickness=0,relief=FLAT)
         self.canvas.grid(row=row,column=column,columnspan=2,sticky=sticky)  
 
+        self.create_labels(self.app,self.row,self.column)
+        self.key_binding()
+
+    # create coordinate labels and status label
+    def create_labels(self,app,row,column):
         self.label_coor = ttk.Label(app,text='Coordinates  x: ---  y: ---')
         self.label_coor.grid(row=row,column=column+1,sticky=SE)
         self.label_status = ttk.Label(app,text='Status: pan')
         self.label_status.grid(row=row,column=column,sticky=SW)
         self.world_grid = WorldGrid(self.width,self.height,self.canvas)
-
-        self.key_binding()
-
-    # set focus on canvas for drawing
-        self.canvas.focus_set()
 
     # set key binding for canvas
     def key_binding(self):
@@ -54,9 +54,10 @@ class WindowCanvas():
         self.canvas.bind("<Button-3>", self.draw_shape.drawline)
         self.canvas.bind("a",self.draw_shape.draw_rectangle)
 
-        self.canvas.bind("<Button-1>",self.set_focus)
-        self.canvas.bind("<Button-2>",self.set_focus)
-        
+        # set canvas as focus when mouse pointer enter canvas
+        self.canvas.bind("<Enter>",self.set_focus)
+
+    # set focus on canvas for drawing    
     def set_focus(self,event):
         event.widget.focus_set()
 

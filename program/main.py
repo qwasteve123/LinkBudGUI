@@ -50,7 +50,7 @@ class ToolBoxTab():
         my_notebook.add(my_frame2,text='Insert')
         my_notebook.add(my_frame3,text='Annotate')
 
-        f1_button = ttk.Button(my_frame1,text= 'hihi',command=lambda:canvas.change_draw_label())
+        f1_button = ttk.Button(my_frame1,text= 'hihi',command=lambda:canvas.draw_shape.change_draw_label())
         f1_button.grid(row=0,column=0,sticky=W)
 
 class PageTab():
