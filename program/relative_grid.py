@@ -306,25 +306,23 @@ class Straight_Lines(Grid_Shapes):
 class Rectangle(Straight_Lines):
     def __init__(self, world_grid: WorldGrid, x1, y1, x2, y2, fill=None, width=2, anchor_x=0, anchor_y=0):
         super().__init__(world_grid, x1, y1, x2, y2, fill, width, anchor_x, anchor_y)
-        self.draw(x1,y1,x2,y2,fill,width)
+        # self.draw(x1,y1,x2,y2,fill,width)
         
     def _create(self,x1,y1,x2,y2,fill,width):
         self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width)
 
 class Coupler():
     def __init__(self, world_grid: WorldGrid, anchor_x=0, anchor_y=0):
-        self.draw(world_grid,anchor_x,anchor_y)
+        self.draw(world_grid,anchor_x,anchor_y,world_grid.scale_step)
 
-    def draw(self,world_grid: WorldGrid,anchor_x,anchor_y):
-        world_grid.draw_rectangle(anchor_x-10, anchor_y-5,anchor_x+10, anchor_y+5)
-        world_grid.draw_s_line(anchor_x,anchor_y,anchor_x,anchor_y+10)
-        world_grid.draw_s_line(anchor_x,anchor_y,anchor_x+7,anchor_y)
+    def draw(self,world_grid: WorldGrid,anchor_x,anchor_y,scale_step):
+        s = self.fix_scale(scale_step)
+        world_grid.draw_rectangle(anchor_x-50*s, anchor_y-25*s,anchor_x+50*s, anchor_y+25*s)
+        world_grid.draw_s_line(anchor_x,anchor_y,anchor_x,anchor_y-50*s)
+        world_grid.draw_s_line(anchor_x,anchor_y,anchor_x+35*s,anchor_y)
     
-    def _set_attribute(self,x1,y1):
-        an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
-        self.world_anchor_x1 = self._screen_center_world_x + an_x1
-        self.world_anchor_y1 = self._screen_center_world_y + an_y1
-        self.x1, self.y1 = x1, y1
+    def fix_scale(self,scale_step):
+        return ZOOM_SCALE**scale_step
 
 if __name__ == "__main__":
     pass
