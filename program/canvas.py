@@ -51,9 +51,7 @@ class WindowCanvas():
         self.canvas.bind("<B2-ButtonRelease>", self.zoom_and_pan.pan_release)
 
         self.draw_shape = DrawShape(self)
-        self.canvas.bind("<Button-3>", self.draw_shape.drawline)
-        self.canvas.bind("a",self.draw_shape.draw_rectangle)
-        self.canvas.bind("b",self.draw_shape.draw_coupler)
+        self.canvas.bind("<Button-3>", self.draw_shape.start_draw)
 
         # set canvas as focus when mouse pointer enter canvas
         self.canvas.bind("<Enter>",self.set_focus)
@@ -134,7 +132,20 @@ class DrawShape():
         self.draw_x1, self.draw_y1 = None,None
         self.world_grid = WindowCanvas.world_grid
         self.label_status = WindowCanvas.label_status
-        
+
+    def start_draw(self,event):
+        match self.draw_status:
+            case 's_line':
+                self.drawline(event)
+            case 'rectangle':
+                self.draw_rectangle(event)
+            case 'coupler':
+                self.draw_coupler(event)
+
+    def end_draw(self,event):
+        if self.draw_x1 != None:
+
+
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
         self.world_grid.add_background(filepath)
@@ -157,6 +168,12 @@ class DrawShape():
 
     def draw_coupler(self,event):
         self.world_grid.draw_coupler(event.x,event.y)
+
+    def change_draw(self,status):
+        self.label_status.config(text=f'Status: {status}')
+        self.draw_status = status
+        self.draw_x1, self.draw_y1 = None, None
+
 
     def change_draw_label(self):
         self.label_status.config(text='Status: s_line Specify first point')
