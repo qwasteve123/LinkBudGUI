@@ -23,24 +23,24 @@ class WorldGrid():
         self.scale_step = scale_step
 
     def draw_coupler(self,anchor_x1,anchor_y1):
-        line = Coupler(self,anchor_x1,anchor_y1)
+        coupler = Coupler(self,anchor_x1,anchor_y1)
+        return coupler
 
     # Add lines to world
     def draw_s_line(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
         line = Straight_Lines(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
-        # self.shape_list.append(line)
+        return line
 
     def draw_rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
         rectangle = Rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
-        # self.shape_list.append(rectangle)
-        # line.draw_rectangle(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+        return rectangle
 
     # Add CAD image file as background
     def add_background(self,filepath):
         self._reset_screen_world_center()
         self._reset_scale_step()    
         try:
-            self.background.delete()
+            self.background.remove_from_canvas()
             self.background.add_background(filepath)
         except:
             self.background = Background(self)
@@ -85,12 +85,16 @@ class WorldGrid():
         screen_y = -world_y*(ZOOM_SCALE**scale_step) + screen_height/2
         return screen_x, screen_y
 
+    def delete_shape(self,shape):
+        shape.remove_from_canvas()
+        self.shape_list.remove(shape)
+
     # pan move all shapes i.e. background, lines and others
     def pan_move(self,x_dev,y_dev):
         self._set_screen_center_world(x_dev,y_dev)
-        print('move')
+        # print('move')
         for shape in self.shape_list:
-            print(type(shape), shape.id)
+            # print(type(shape), shape.id)
             shape.move(self.screen_center_world_x,self.screen_center_world_y)
 
     # zoom all shapes
@@ -111,13 +115,14 @@ class WorldGrid():
 # Common GridShapes inherited by other shapes. 
 # Get screen center from World_Grid and help shapes showcase.
 class Grid_Shapes():
-    def __init__(self,world_grid : WorldGrid,anchor_x =0,anchor_y =0):
+    def __init__(self,world_grid : WorldGrid,anchor_x =0,anchor_y =0,tag=None):
         self._screen_width = world_grid.screen_width
         self._screen_height = world_grid.screen_height
         self._canvas = world_grid.canvas
         self._scale_step = world_grid.scale_step
         self._screen_center_world_x = world_grid.screen_center_world_x
         self._screen_center_world_y = world_grid.screen_center_world_y
+        self.tag = tag
 
         self.width, self.height = 0,0
         self._screen_anchor_x, self._screen_anchor_y = 0,0
@@ -128,7 +133,7 @@ class Grid_Shapes():
     def append_list(self,world_grid):
         world_grid.shape_list.append(self)
 
-    def delete(self):
+    def remove_from_canvas(self):
         self._canvas.delete(self.id)
 
     # Input screen_center_world return image center
@@ -245,16 +250,16 @@ class Background(Grid_Shapes):
         self.id = self._canvas.create_image(WorldGrid.world_to_screen(self._screen_anchor_x,self._screen_anchor_y,
                                                                         0,self._screen_width,self._screen_height),
                                                                         anchor=CENTER,image=tk_image,
-                                                                        tag=('bkgd'))
+                                                                        tag=self.tag)
 
     # pan move of 
     def move(self,screen_center_world_x,screen_center_world_y):
-        self.delete()
+        self.remove_from_canvas()
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         self.add_background(self.filepath,'pan')
 
     def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
-        self.delete()
+        self.remove_from_canvas()
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         self._update_scale_step(scale_step)
         self.add_background(self.filepath,'pan')
@@ -269,7 +274,7 @@ class Straight_Lines(Grid_Shapes):
         self._set_attribute(x1,y1,x2,y2,fill,width)
 
     def _create(self,x1,y1,x2,y2,fill,width):
-        self.id = self._canvas.create_line(x1,y1,x2,y2, fill= fill, width=width)
+        self.id = self._canvas.create_line(x1,y1,x2,y2, fill= fill, width=width,tag=self.tag)
 
     def _set_attribute(self,x1,y1,x2,y2,fill,width):
         self.fill, self.width = fill, width
@@ -283,13 +288,13 @@ class Straight_Lines(Grid_Shapes):
         self.x2, self.y2 = x2, y2
 
     def move(self,screen_center_world_x,screen_center_world_y):
-        self.delete()
+        self.remove_from_canvas()
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         self._update_screen_anchors()
         self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
-        self.delete()
+        self.remove_from_canvas()
         self._update_scale_step(scale_step)
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         self._update_screen_anchors()
@@ -309,7 +314,7 @@ class Rectangle(Straight_Lines):
         # self.draw(x1,y1,x2,y2,fill,width)
         
     def _create(self,x1,y1,x2,y2,fill,width):
-        self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width)
+        self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width,tag= self.tag)
 
 class Coupler():
     def __init__(self, world_grid: WorldGrid, anchor_x=0, anchor_y=0):

@@ -40,18 +40,19 @@ class WindowCanvas():
     # set key binding for canvas
     def key_binding(self):
         self.hover_coor = HoverCoor(self)
-        self.canvas.bind("<Motion>", self.hover_coor.hover_motion)
+        self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event), self.draw_shape.hover_draw(Event)])
         self.canvas.bind("<Leave>", self.hover_coor.hover_leave)
 
         self.zoom_and_pan = PanAndZoom(self)
         self.canvas.bind("<MouseWheel>", self.zoom_and_pan.mouse_wheel)
         self.canvas.bind("<B1-Motion>", self.zoom_and_pan.pan_move)
         self.canvas.bind("<B1-ButtonRelease>", self.zoom_and_pan.pan_release)
-        self.canvas.bind("<B2-Motion>", self.zoom_and_pan.pan_move)
+        self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.pan_draw(Event)])
         self.canvas.bind("<B2-ButtonRelease>", self.zoom_and_pan.pan_release)
 
         self.draw_shape = DrawShape(self)
         self.canvas.bind("<Button-3>", self.draw_shape.start_draw)
+        # self.canvas.bind("<B2-Motion>", self.draw_shape.pan_draw)
 
         # set canvas as focus when mouse pointer enter canvas
         self.canvas.bind("<Enter>",self.set_focus)
@@ -74,6 +75,7 @@ class HoverCoor():
         self.height = WindowCanvas.height
         self.row = WindowCanvas.row
         self.column = WindowCanvas.column
+
 
     def hover_motion(self,event):
         scale_step = self.win_can.scale_step
@@ -133,6 +135,9 @@ class DrawShape():
         self.world_grid = WindowCanvas.world_grid
         self.label_status = WindowCanvas.label_status
 
+        self.draw_status = None
+        self.temp_shape = None
+
     def start_draw(self,event):
         match self.draw_status:
             case 's_line':
@@ -141,10 +146,30 @@ class DrawShape():
                 self.draw_rectangle(event)
             case 'coupler':
                 self.draw_coupler(event)
+            case None:
+                pass
 
-    def end_draw(self,event):
+    def hover_draw(self,event):
         if self.draw_x1 != None:
+            if self.temp_shape != None:
+                self.world_grid.delete_shape(self.temp_shape)
+                print(self.draw_x1,self.draw_y1,event.x,event.y)
+                self.temp_shape = self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,event.x,event.y)
+            else:
+                print(self.draw_x1,self.draw_y1,event.x,event.y)
+                self.temp_shape = self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,event.x,event.y)
 
+    def pan_draw(self,event):
+        if self.draw_x1 != None:
+            if self.temp_shape != None:
+                try:
+                    x1, y1 = self.draw_x1, self.draw_y1
+                    self.draw_x1 = x1 + event.x-self.pan_x1
+                    self.draw_y1 = y1 + self.pan_y1-event.y
+                    print('move ',event.x-self.pan_x1,self.pan_y1-event.y,self.draw_x1,self.draw_y1)
+                except:
+                    self.pan_x1, self.pan_y1 = event.x, event.y
+    
 
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
@@ -152,11 +177,12 @@ class DrawShape():
 
     def drawline(self,event):
         if self.draw_x1 == None:
+            
             self.draw_x1, self.draw_y1 = event.x, event.y
         else:
             x2, y2 = event.x, event.y
             self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,x2,y2)
-            self.draw_x1, self.draw_y1 = None,None
+            self.draw_x1, self.draw_y1 = None, None
 
     def draw_rectangle(self,event):
         if self.draw_x1 == None:
@@ -172,8 +198,6 @@ class DrawShape():
     def change_draw(self,status):
         self.label_status.config(text=f'Status: {status}')
         self.draw_status = status
-        self.draw_x1, self.draw_y1 = None, None
-
 
     def change_draw_label(self):
         self.label_status.config(text='Status: s_line Specify first point')
