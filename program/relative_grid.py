@@ -26,12 +26,11 @@ class WorldGrid():
     def draw_s_line(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
         line = Straight_Lines(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
         self.shape_list.append(line)
-        # line.draw(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
 
     def draw_rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
-        line = Rectangle(self)
+        line = Rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
         self.shape_list.append(line)
-        line.draw_rectangle(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+        # line.draw_rectangle(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
 
     # Add CAD image file as background
     def add_background(self,filepath):
@@ -296,12 +295,13 @@ class Straight_Lines(Grid_Shapes):
         self.x1, self.y1 = WorldGrid.world_to_screen(x1,y1,self._scale_step,self._screen_width,self._screen_height)
         self.x2, self.y2 = WorldGrid.world_to_screen(x2,y2,self._scale_step,self._screen_width,self._screen_height)
 
-class Rectangle(Grid_Shapes):
+class Rectangle(Straight_Lines):
+    def __init__(self, world_grid: WorldGrid, x1, y1, x2, y2, fill=None, width=2, anchor_x=0, anchor_y=0):
+        super().__init__(world_grid, x1, y1, x2, y2, fill, width, anchor_x, anchor_y)
+        self.draw(x1,y1,x2,y2,fill,width)
+        
     def _create(self,x1,y1,x2,y2,fill,width):
         self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width)
-    
-class Rectangle(Grid_Shapes):
-    def draw_rectangle(self,x1,y1,x2,y2,fill=None,width=2):
-        pass
+
 if __name__ == "__main__":
     pass

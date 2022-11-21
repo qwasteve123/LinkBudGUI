@@ -154,6 +154,14 @@ class DrawShape():
             self.world_grid.draw_rectangle(self.draw_x1,self.draw_y1,x2,y2)
             self.draw_x1, self.draw_y1 = None,None
 
+    def draw_coupler(self,event):
+        if self.draw_x1 == None:
+            self.draw_x1, self.draw_y1 = event.x, event.y
+        else:
+            x2, y2 = event.x, event.y
+            self.world_grid.draw_rectangle(self.draw_x1,self.draw_y1,x2,y2)
+            self.draw_x1, self.draw_y1 = None,None
+
     def change_draw_label(self):
         self.label_status.config(text='Status: s_line Specify first point')
 
