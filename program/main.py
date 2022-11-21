@@ -10,9 +10,6 @@ from PIL import ImageTk,Image
 from relative_grid import *
 from canvas import *
 
-
-
-
 def convert(file, outputDir):
     outputDir = outputDir + str(round(time.time())) + '/'
     if not os.path.exists(outputDir):
@@ -32,26 +29,6 @@ class HexColor(Enum):
     TITLE = '#222933'
     TOOLTAB = '#3B4453'
     CANVAS_BACKGROUD = '#222831'
-
-class ToolBoxTab():
-    def __init__(self,root,width,height,row,column,sticky,rowspan=1,columnspan =1):
-        my_notebook = ttk.Notebook(root)
-        my_notebook.grid(padx=5,pady=4,rowspan=rowspan,columnspan=columnspan)
-
-        my_frame1 = ttk.Frame(my_notebook, width=width, height=height)
-        my_frame2 = ttk.Frame(my_notebook, width=width, height=height)
-        my_frame3 = ttk.Frame(my_notebook, width=width, height=height)
-
-        my_frame1.grid(row=row,column=column,sticky=sticky)
-        my_frame2.grid(row=row,column=column,sticky=sticky)
-        my_frame3.grid(row=row,column=column,sticky=sticky)
-
-        my_notebook.add(my_frame1,text='Home')
-        my_notebook.add(my_frame2,text='Insert')
-        my_notebook.add(my_frame3,text='Annotate')
-
-        f1_button = ttk.Button(my_frame1,text= 'hihi',command=lambda:canvas.draw_shape.change_draw_label())
-        f1_button.grid(row=0,column=0,sticky=W)
 
 class PageTab():
     def __init__(self,root,width,height,row,column,sticky,rowspan=1,columnspan =1):
@@ -83,7 +60,6 @@ if __name__ == "__main__":
     # root.config(background='white')
     root.iconbitmap("Image_Folder/icon.ico")
     width,height=root.winfo_width(),root.winfo_height()
-
 
     toolbox = ToolBoxTab(root,width-10,100,1,0,N,1,2)
     pagetab = PageTab(root,1,1,1,0,SW)
