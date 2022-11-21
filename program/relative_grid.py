@@ -26,7 +26,7 @@ class WorldGrid():
     def draw_s_line(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
         line = Straight_Lines(self)
         self.shape_list.append(line)
-        line.draw_line(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+        line.draw(anchor_x1,anchor_y1,anchor_x2,anchor_y2)
 
     def draw_rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
         line = Rectangle(self)
@@ -44,9 +44,6 @@ class WorldGrid():
             self.background = Background(self)
             self.background.add_background(filepath)
             self.shape_list.append(self.background)
-
-    def add_straight_line():
-        pass
 
     # set the world coordinate that the screen center showing
     def _set_screen_center_world(self,dev_x: float =0 ,dev_y: float=0):
@@ -256,9 +253,16 @@ class Background(Grid_Shapes):
         self.add_background(self.filepath,'pan')
 
 class Straight_Lines(Grid_Shapes):
-    def draw_line(self,x1,y1,x2,y2,fill='black',width=2):
-        self.fill, self.width = fill, width
+
+    def draw(self,x1,y1,x2,y2,fill='black',width=2): 
+        self._create(x1,y1,x2,y2,fill,width)
+        self._set_attribute(x1,y1,x2,y2,fill,width)
+
+    def _create(self,x1,y1,x2,y2,fill,width):
         self.id = self._canvas.create_line(x1,y1,x2,y2, fill= fill, width=width)
+
+    def _set_attribute(self,x1,y1,x2,y2,fill,width):
+        self.fill, self.width = fill, width
         an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
         an_x2,an_y2 = WorldGrid.screen_to_world(x2,y2,-self._scale_step,self._screen_width,self._screen_height)
         self.world_anchor_x1 = self._screen_center_world_x + an_x1
@@ -272,14 +276,14 @@ class Straight_Lines(Grid_Shapes):
         self.delete()
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         self._update_screen_anchors()
-        self.id = self._canvas.create_line(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
+        self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
         self.delete()
         self._update_scale_step(scale_step)
         self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
         self._update_screen_anchors()
-        self.id = self._canvas.create_line(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
+        self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def _update_screen_anchors(self):
         x1 = self.world_anchor_x1 - self._screen_center_world_x
@@ -290,38 +294,40 @@ class Straight_Lines(Grid_Shapes):
         self.x2, self.y2 = WorldGrid.world_to_screen(x2,y2,self._scale_step,self._screen_width,self._screen_height)
 
 class Rectangle(Grid_Shapes):
-    def draw_rectangle(self,x1,y1,x2,y2,fill=None,width=2):
-        self.fill, self.width = fill, width
-        self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width)
-        an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
-        an_x2,an_y2 = WorldGrid.screen_to_world(x2,y2,-self._scale_step,self._screen_width,self._screen_height)
-        self.world_anchor_x1 = self._screen_center_world_x + an_x1
-        self.world_anchor_y1 = self._screen_center_world_y + an_y1
-        self.world_anchor_x2 = self._screen_center_world_x + an_x2
-        self.world_anchor_y2 = self._screen_center_world_y + an_y2
-        self.x1, self.y1 = x1, y1
-        self.x2, self.y2 = x2, y2
+    def _create(self,x1,y1,x2,y2,fill,width):
+        self.id = self._canvas.create_line(x1,y1,x2,y2, fill= fill, width=width)
 
-    def move(self,screen_center_world_x,screen_center_world_y):
-        self.delete()
-        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
-        self._update_screen_anchors()
-        self.id = self._canvas.create_rectangle(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
+    #     self.fill, self.width = fill, width
+    #     self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width)
+    #     an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
+    #     an_x2,an_y2 = WorldGrid.screen_to_world(x2,y2,-self._scale_step,self._screen_width,self._screen_height)
+    #     self.world_anchor_x1 = self._screen_center_world_x + an_x1
+    #     self.world_anchor_y1 = self._screen_center_world_y + an_y1
+    #     self.world_anchor_x2 = self._screen_center_world_x + an_x2
+    #     self.world_anchor_y2 = self._screen_center_world_y + an_y2
+    #     self.x1, self.y1 = x1, y1
+    #     self.x2, self.y2 = x2, y2
 
-    def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
-        self.delete()
-        self._update_scale_step(scale_step)
-        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
-        self._update_screen_anchors()
-        self.id = self._canvas.create_rectangle(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
+    # def move(self,screen_center_world_x,screen_center_world_y):
+    #     self.delete()
+    #     self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+    #     self._update_screen_anchors()
+    #     self.id = self._canvas.create_rectangle(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
-    def _update_screen_anchors(self):
-        x1 = self.world_anchor_x1 - self._screen_center_world_x
-        y1 = self.world_anchor_y1 - self._screen_center_world_y
-        x2 = self.world_anchor_x2 - self._screen_center_world_x
-        y2 = self.world_anchor_y2 - self._screen_center_world_y
-        self.x1, self.y1 = WorldGrid.world_to_screen(x1,y1,self._scale_step,self._screen_width,self._screen_height)
-        self.x2, self.y2 = WorldGrid.world_to_screen(x2,y2,self._scale_step,self._screen_width,self._screen_height)
+    # def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
+    #     self.delete()
+    #     self._update_scale_step(scale_step)
+    #     self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+    #     self._update_screen_anchors()
+    #     self.id = self._canvas.create_rectangle(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
+
+    # def _update_screen_anchors(self):
+    #     x1 = self.world_anchor_x1 - self._screen_center_world_x
+    #     y1 = self.world_anchor_y1 - self._screen_center_world_y
+    #     x2 = self.world_anchor_x2 - self._screen_center_world_x
+    #     y2 = self.world_anchor_y2 - self._screen_center_world_y
+    #     self.x1, self.y1 = WorldGrid.world_to_screen(x1,y1,self._scale_step,self._screen_width,self._screen_height)
+    #     self.x2, self.y2 = WorldGrid.world_to_screen(x2,y2,self._scale_step,self._screen_width,self._screen_height)
     
 class Rectangle(Grid_Shapes):
     def draw_rectangle(self,x1,y1,x2,y2,fill=None,width=2):
