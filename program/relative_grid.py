@@ -15,6 +15,7 @@ class WorldGrid():
         self.canvas = canvas
         self.shape_list = []
         self.screen_center_world_pt = np.array([0,0])
+        self.background = None
 
     @property
     def scale(self):
@@ -40,13 +41,12 @@ class WorldGrid():
     # Add CAD image file as background
     def add_background(self,filepath):
         self._reset_screen_world_center()
-        self._reset_scale_step()    
-        try:
-            self.background.remove_from_canvas()
-            self.background.add_background(filepath)
-        except:
+        self._reset_scale_step()
+        if self.background == None:    
             self.background = Background(self)
-            self.background.add_background(filepath)
+        else:
+            self.background.remove_from_canvas()
+        self.background.add_background(filepath)
 
     # set the world coordinate that the screen center showing
     def _set_screen_center_world(self,dev):
@@ -72,7 +72,6 @@ class WorldGrid():
     # The screen coordinates shift back to origin
     def world_dir_screen(self,world):
         screen = world + self.screen_size/2
-        screen[1] *= -1
         return screen
 
     # The world coordinate that the screen is showing
@@ -125,14 +124,14 @@ class Grid_Shapes():
         self.tag = tag
 
         self.size = np.array([0,0])
-        self._screen_anchor_x, self._screen_anchor_y = np.array([0,0])
+        self._screen_anchor = np.array([0,0])
         self.world_anchor = anchor
 
         wg.shape_list.append(self)
 
     @property
     def scale(self):
-        return ZOOM_SCALE**(self.scale_step)
+        return ZOOM_SCALE**(self.wg.scale_step)
 
     def remove_from_canvas(self):
         self._canvas.delete(self.id)
@@ -140,7 +139,6 @@ class Grid_Shapes():
     # Input screen_center_world return image center
     def _world_to_image(self,world):
         img_world = world + self.size/2
-        img_world[1] *= -1
         return img_world
 
     def _update_screen_center_world(self):
@@ -150,48 +148,30 @@ class Grid_Shapes():
         self._scale_step = self.wg.screen_center_world_pt
 
     # Get coordinate of image of area that should be cropped
-    def _get_coor_from_image_center(self,screen_center_world_pt):
-        img_center_world_pt = self._world_to_image(screen_center_world_pt)
-        img_pt1 = img_center_world_pt - (self.size/2)/self.scale
-        img_pt2 = img_center_world_pt + (self.size/2)/self.scale
+    def _get_coor_from_image_center(self):
+        img_center_world_pt = self._world_to_image(self._screen_center_world_pt)
+        img_pt1 = img_center_world_pt - (self._screen_size/2)/self.scale
+        img_pt2 = img_center_world_pt + (self._screen_size/2)/self.scale
         self._get_screen_anchor(img_pt1,img_pt2)
         img_pt1,img_pt2 = self._get_boundaries(img_pt1,img_pt2)
-        return img_pt1,img_pt2
+        return (img_pt1[0],img_pt1[1],img_pt2[0],img_pt2[1])
 
     # Handle the screen boundaries when showing on canvas
     def _get_screen_anchor(self,img_pt1,img_pt2):
-        dev_x, dev_y = 0,0
-        width,height = self.size
-        img_pt1_x, img_pt1_y = img_pt1
-        img_pt2_x, img_pt2_y = img_pt2 
-        if img_pt1_x < 0 and img_pt2_x > width:
-            dev_x = (width - (img_pt2_x + img_pt1_x))*self.scale
-        elif img_pt2_x > width:
-            dev_x = (width - img_pt2_x)*self.scale
-        elif img_pt1_x < 0:
-            dev_x = (-img_pt1_x)*self.scale
+        x,y, origin = 0,1,[0,0]
+        center_x = (min(img_pt2[x],self.size[x])+max(img_pt1[x],origin[x]))/2
+        center_y = (min(img_pt2[y],self.size[y])+max(img_pt1[y],origin[y]))/2
 
-        if img_pt1_y < 0 and img_pt2_y > height:
-            dev_y = (height - (img_pt2_y + img_pt1_y))*self.scale
-        elif img_pt2_y > height:
-            dev_y = (height - img_pt2_y)*self.scale
-        elif img_pt1_y < 0:
-            dev_y = (-img_pt1_y)*self.scale
-
-        self._screen_anchor = np.array([dev_x/2,-dev_y/2])
+        self._screen_anchor[0] =center_x*self.scale
+        self._screen_anchor[1] =center_y*self.scale
 
     def _get_boundaries(self,img_pt1,img_pt2):
-        img_pt1_x, img_pt1_y = img_pt1
-        img_pt2_x, img_pt2_y = img_pt2 
-        if img_pt1_x < 0:
-            img_pt1_x = 0
-        if img_pt1_y < 0:
-            img_pt1_y = 0            
-        if img_pt2_x > self.size[0]:
-            img_pt2_x = self.size[0]  
-        if img_pt2_y > self.size[1]:
-            img_pt2_y = self.size[1]
-        return (img_pt1_x, img_pt1_y,img_pt2_x, img_pt2_y)
+        x,y  = 0,1,
+        origin=np.zeros(2)
+        img_pt1 = np.array([max(img_pt1[x],origin[x]),max(img_pt1[y],origin[y])])
+        img_pt2 = np.array([min(img_pt2[x],self.size[x]),min(img_pt2[y],self.size[y])])
+
+        return img_pt1,img_pt2
 
 ###########################################################
 # Inherit GridShapes, responsible for image cropping, resizing and showing on canvas
@@ -199,16 +179,17 @@ class Grid_Shapes():
 class Background(Grid_Shapes):
 
     # resize image 
-    def _resize_image(self,image,scale_step,dev_width =0,dev_height=0):
-        size = (self._screen_width-dev_width, self._screen_height-dev_height)
-        size = (int(image.width*(ZOOM_SCALE**(scale_step))), int(image.height*(ZOOM_SCALE**(scale_step))))
+    def _resize_image(self,image):
+        size = (int(image.size[0]*self.scale), int(image.size[1]*self.scale))
         image = image.resize(size, pil.Image.BOX)
         return image
 
     # width/ height ratio for resizing
-    @ staticmethod
-    def _get_ratio_aspect(width,height):
-        return height/width
+    @ property
+    def ratio_aspect(self):
+        if self.size == None:
+            return None
+        return self.size[1]/self.size[0]
 
     # Crop image with given coordinates
     def _crop_image(self,image,area_coordinate):
@@ -228,86 +209,81 @@ class Background(Grid_Shapes):
         else:  
             image = self._add_new_image(filepath)
             image = self._crop_and_resize_image(image)
-        self._to_canvas(image,0,0)
+        self._to_canvas(image)
+        return self
 
     # Add background image
     def _add_new_image(self,filepath):
         image = self._create_image(filepath)
-        self.width, self.height = image.width,image.height
+        self.size = np.array([image.width,image.height])
         self._primitive_image = image
-        self.ratio_aspect = self._get_ratio_aspect(image.width,image.height)
         return image
 
     # grouped crop and resize as it is used in panning
     def _crop_and_resize_image(self,image):
-        cropped_img = self._crop_image(image,self._get_coor_from_image_center(self._screen_center_world_x, self._screen_center_world_y,self._scale_step))
-        resized_image = self._resize_image(cropped_img,self._scale_step)
+        cropped_img = self._crop_image(image,self._get_coor_from_image_center())
+        resized_image = self._resize_image(cropped_img)
         return resized_image
 
     # Turn the image to TkImage object and place it on canvas
-    def _to_canvas(self,image,x=0,y=0):
+    def _to_canvas(self,image):
         tk_image = pil.ImageTk.PhotoImage(image)
         self._tk_temp_img = tk_image
-        self.id = self._canvas.create_image(self.world_grid.world_dir_screen(self._screen_anchor_x,self._screen_anchor_y),
-                                                                        anchor=CENTER,image=tk_image,
-                                                                        tag=self.tag)
+        self.id = self._canvas.create_image(self.wg.world_dir_screen(np.array([0,0])).tolist(),anchor=CENTER,image=tk_image,tag=self.tag)
 
     # pan move of 
-    def move(self,screen_center_world_x,screen_center_world_y):
+    def move(self,screen_center_world):
         self.remove_from_canvas()
-        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+        self._update_screen_center_world(screen_center_world)
         self.add_background(self.filepath,'pan')
 
-    def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
+    def zoom(self,screen_center_world,scale_step):
         self.remove_from_canvas()
-        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+        self._update_screen_center_world(screen_center_world)
         self._update_scale_step(scale_step)
         self.add_background(self.filepath,'pan')
 
 class Straight_Lines(Grid_Shapes):
-    def __init__(self, world_grid: WorldGrid,x1,y1,x2,y2,fill='black',width=2, anchor_x=0, anchor_y=0):
+    def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,fill='black',width=2, anchor_x=0, anchor_y=0):
         super().__init__(world_grid, anchor_x, anchor_y)
-        self.draw(x1,y1,x2,y2,fill,width)
+        self.draw(screen_pt1,screen_pt2,fill,width)
+        self._create(screen_pt1,screen_pt2,fill,width)
+        self._set_attribute(screen_pt1,screen_pt2,fill,width)
 
-    def draw(self,x1,y1,x2,y2,fill='black',width=2): 
-        self._create(x1,y1,x2,y2,fill,width)
-        self._set_attribute(x1,y1,x2,y2,fill,width)
+    def _create(self,screen_pt1,screen_pt2,fill,width):
 
-    def _create(self,x1,y1,x2,y2,fill,width):
-        point_1, point_2 = (x1,y1), (x2,y2)
-        self.id = self._canvas.create_line(point_1,point_2, fill= fill, width=width,tag=self.tag)
+        self.id = self._canvas.create_line(screen_pt1.tolist(),screen_pt2.tolist(), fill= fill, width=width,tag=self.tag)
 
-    def _set_attribute(self,x1,y1,x2,y2,fill,width):
+    def _set_attribute(self,pt_1,pt_2,fill,width):
         self.fill, self.width = fill, width
-        self.world_anchor_x1, self.world_anchor_y1 = self.world_grid.screen_to_world(x1,y1)
-        self.world_anchor_x2, self.world_anchor_y2 = self.world_grid.screen_to_world(x2,y2)
-        self.x1, self.y1 = x1, y1
-        self.x2, self.y2 = x2, y2
-
-    def move(self,screen_center_world_x,screen_center_world_y):
+        self.world_anchor_1 = self.wg.screen_to_world(pt_1)
+        self.world_anchor_2 = self.wg.screen_to_world(pt_2)
+        self.pt_1,self.pt_2= pt_1,pt_2
+         
+    def move(self,screen_center_world_pt):
         self.remove_from_canvas()
-        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
+        self._update_screen_center_world(screen_center_world_pt)
         self._update_screen_anchors()
-        self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
+        self._create(self.pt_1,self.pt_2,fill=self.fill,width=self.width)
 
-    def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
+    def zoom(self,screen_center_world_pt,scale_step):
         self._update_scale_step(scale_step)
-        self.move(screen_center_world_x,screen_center_world_y)
+        self.move(screen_center_world_pt)
 
     def _update_screen_anchors(self):
-        self.x1, self.y1 = self.world_grid.world_to_screen(self.world_anchor_x1,self.world_anchor_y1)
-        self.x2, self.y2 = self.world_grid.world_to_screen(self.world_anchor_x2,self.world_anchor_y2)
+        self.pt_1 = self.wg.world_to_screen(self.world_anchor_1)
+        self.pt_2 = self.wg.world_to_screen(self.world_anchor_2)
 
 class Rectangle(Straight_Lines):
-    def __init__(self, world_grid: WorldGrid, x1, y1, x2, y2, fill=None, width=2, anchor_x=0, anchor_y=0):
-        super().__init__(world_grid, x1, y1, x2, y2, fill, width, anchor_x, anchor_y)
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2, anchor_x=0, anchor_y=0):
+        super().__init__(world_grid, pt_1, pt_2, fill, width, anchor_x, anchor_y)
         
-    def _create(self,x1,y1,x2,y2,fill,width):
-        self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width,tag= self.tag)
+    def _create(self,pt_1, pt_2,fill,width):
+        self.id = self._canvas.create_rectangle(pt_1.tolist(),pt_2.tolist(), fill= fill, width=width,tag= self.tag)
 
 class Coupler():
-    def __init__(self, world_grid: WorldGrid, anchor_x=0, anchor_y=0):
-        self.draw(world_grid,anchor_x,anchor_y,world_grid.scale_step)
+    def __init__(self, world_grid: WorldGrid, anchor_1=np.array([0,0])):
+        self.draw(world_grid,anchor_1,world_grid.scale_step)
 
     def draw(self,world_grid: WorldGrid,anchor_x,anchor_y,scale_step):
         s = self.fix_scale(scale_step)

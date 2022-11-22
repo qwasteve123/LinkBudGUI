@@ -17,14 +17,15 @@ class HexColor(Enum):
 
 class WindowCanvas():
     def __init__(self,app,width,height,row,column,sticky):
-        self.width, self.height = width, height
+        self.size = np.array([width, height])
         self.bkgd_color = HexColor.CANVAS_BACKGROUD.value
         self.row, self.column = row, column
         self.app = app
 
-        self.canvas = Canvas(app,width=self.width,height=self.height,background=self.bkgd_color,
+        self.canvas = Canvas(app,width=self.size[0],height=self.size[1],background=self.bkgd_color,
                         cursor='tcross',borderwidth=0,highlightthickness=0,relief=FLAT)
         self.canvas.grid(row=row,column=column,columnspan=2,sticky=sticky)  
+        self.world_grid = WorldGrid(self.size,self.canvas)
 
         self.create_labels(self.app,self.row,self.column)
         self.key_binding()
@@ -35,7 +36,7 @@ class WindowCanvas():
         self.label_coor.grid(row=row,column=column+1,sticky=SE)
         self.label_status = ttk.Label(app,text='Status: pan')
         self.label_status.grid(row=row,column=column,sticky=SW)
-        self.world_grid = WorldGrid(self.width,self.height,self.canvas)
+        
 
     # set key binding for canvas
     def key_binding(self):
@@ -72,21 +73,20 @@ class HoverCoor():
         self.win_can = WindowCanvas
         self.world_grid = WindowCanvas.world_grid
         self.label_coor = WindowCanvas.label_coor
-        self.width = WindowCanvas.width
-        self.height = WindowCanvas.height
+        self.size = WindowCanvas.size
         self.row = WindowCanvas.row
         self.column = WindowCanvas.column
 
 
     def hover_motion(self,event):
-        pt = self.world_grid.screen_to_world([event.x,event.y])
+        pt = self.world_grid.screen_to_world(np.array([event.x,event.y]))
         self.change_label(pt)
             
     def hover_leave(self,event):
-        self.change_label("","")
+        self.change_label(None)
 
-    def change_label(self,center):
-        if center[0] == "":
+    def change_label(self,center=None):
+        if np.any(center) == None:
             self.label_coor.config(text='Coordinates  x: ---  y: ---' )
         else:
             # self.label_coor.grid(row=self.row,column=self.column+1,sticky=SE)
@@ -118,10 +118,11 @@ class PanAndZoom():
         self.canvas.config(cursor='tcross')
 
     def pan_move(self,event):
-        if self.pan_pt1 != None:
-            dev_pt = [event.x-self.pan_x1, self.pan_y1-event.y]
+        if np.any(self.pan_pt1) != None:
+            dev_pt = np.array([event.x-self.pan_pt1[0], self.pan_pt1[1]-event.y])
             self.world_grid.pan_move(dev_pt)
-        self.pan_pt1 = [event.x, event.y]
+        self.pan_pt1 = np.array([event.x, event.y])
+        print(self.pan_pt1)
         sleep(0.05)
         self.canvas.config(cursor='circle')
 
@@ -145,11 +146,11 @@ class DrawShape():
                 pass
 
     def hover_draw(self,event):
-        if self.draw_x1 != None:
+        if self.draw_pt1 != None:
             if self.temp_shape != None:
                 self.world_grid.delete_shape(self.temp_shape)
                 self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
-            self.temp_shape = self.world_grid.draw_s_line(self.draw_pt1,[event.x,event.y])
+            self.temp_shape = self.world_grid.draw_s_line(self.draw_pt1,np.array([event.x,event.y]))
             
     def pan_draw(self,event):
         if self.draw_pt1 != None:
@@ -158,7 +159,7 @@ class DrawShape():
                     self.draw_pt1[0] += event.x-self.pan_x1
                     self.draw_pt1[1] += self.pan_y1-event.y
                 except:
-                    self.pan_pt1 = [event.x, event.y]
+                    self.pan_pt1 = np.array([event.x, event.y])
     
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
@@ -166,22 +167,22 @@ class DrawShape():
 
     def drawline(self,event):
         if self.draw_pt1 == None:
-            self.draw_pt1 = [event.x, event.y]
+            self.draw_pt1 = np.array([event.x, event.y])
         else:
-            pt_2 = [event.x, event.y]
+            pt_2 = np.array([event.x, event.y])
             self.world_grid.draw_s_line(self.draw_pt1,pt_2)
             self.draw_pt1 = None
 
     def draw_rectangle(self,event):
         if self.draw_pt1 == None:
-            self.draw_pt1 = [event.x, event.y]
+            self.draw_pt1 = np.array([event.x, event.y])
         else:
-            pt_2 = [event.x, event.y]
+            pt_2 = np.array([event.x, event.y])
             self.world_grid.draw_rectangle(self.draw_pt1,pt_2)
             self.draw_pt1 = None
 
     def draw_coupler(self,event):
-        self.world_grid.draw_coupler([event.x,event.y])
+        self.world_grid.draw_coupler(np.array([event.x, event.y]))
 
     def change_draw(self,status):
         self.label_status.config(text=f'Status: {status}')
