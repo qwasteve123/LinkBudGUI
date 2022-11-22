@@ -309,10 +309,6 @@ class Straight_Lines(Grid_Shapes):
         self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def _update_screen_anchors(self):
-        # x1 = self.world_anchor_x1 - self._screen_center_world_x
-        # y1 = self.world_anchor_y1 - self._screen_center_world_y
-        # x2 = self.world_anchor_x2 - self._screen_center_world_x
-        # y2 = self.world_anchor_y2 - self._screen_center_world_y
         self.x1, self.y1 = self.world_grid.world_to_screen(self.world_anchor_x1,self.world_anchor_y1)
         self.x2, self.y2 = self.world_grid.world_to_screen(self.world_anchor_x2,self.world_anchor_y2)
 
