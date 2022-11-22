@@ -286,7 +286,8 @@ class Straight_Lines(Grid_Shapes):
         self._set_attribute(x1,y1,x2,y2,fill,width)
 
     def _create(self,x1,y1,x2,y2,fill,width):
-        self.id = self._canvas.create_line(x1,y1,x2,y2, fill= fill, width=width,tag=self.tag)
+        point_1, point_2 = (x1,y1), (x2,y2)
+        self.id = self._canvas.create_line(point_1,point_2, fill= fill, width=width,tag=self.tag)
 
     def _set_attribute(self,x1,y1,x2,y2,fill,width):
         self.fill, self.width = fill, width
@@ -302,11 +303,8 @@ class Straight_Lines(Grid_Shapes):
         self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def zoom(self,screen_center_world_x,screen_center_world_y,scale_step):
-        self.remove_from_canvas()
         self._update_scale_step(scale_step)
-        self._update_screen_center_world(screen_center_world_x,screen_center_world_y)
-        self._update_screen_anchors()
-        self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
+        self.move(screen_center_world_x,screen_center_world_y)
 
     def _update_screen_anchors(self):
         self.x1, self.y1 = self.world_grid.world_to_screen(self.world_anchor_x1,self.world_anchor_y1)
@@ -315,7 +313,6 @@ class Straight_Lines(Grid_Shapes):
 class Rectangle(Straight_Lines):
     def __init__(self, world_grid: WorldGrid, x1, y1, x2, y2, fill=None, width=2, anchor_x=0, anchor_y=0):
         super().__init__(world_grid, x1, y1, x2, y2, fill, width, anchor_x, anchor_y)
-        # self.draw(x1,y1,x2,y2,fill,width)
         
     def _create(self,x1,y1,x2,y2,fill,width):
         self.id = self._canvas.create_rectangle(x1,y1,x2,y2, fill= fill, width=width,tag= self.tag)

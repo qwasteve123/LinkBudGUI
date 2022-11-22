@@ -154,8 +154,6 @@ class DrawShape():
                 self.world_grid.delete_shape(self.temp_shape)
                 self.draw_x1,self.draw_y1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_x1
                                                             ,self.temp_shape.world_anchor_y1)
-            print(self.draw_x1,self.draw_y1,event.x,event.y)
-
             self.temp_shape = self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,event.x,event.y)
             
     def pan_draw(self,event):
@@ -169,14 +167,12 @@ class DrawShape():
                 except:
                     self.pan_x1, self.pan_y1 = event.x, event.y
     
-
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
         self.world_grid.add_background(filepath)
 
     def drawline(self,event):
         if self.draw_x1 == None:
-            
             self.draw_x1, self.draw_y1 = event.x, event.y
         else:
             x2, y2 = event.x, event.y
