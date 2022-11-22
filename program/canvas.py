@@ -40,14 +40,17 @@ class WindowCanvas():
     # set key binding for canvas
     def key_binding(self):
         self.hover_coor = HoverCoor(self)
-        self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event), self.draw_shape.hover_draw(Event)])
+        # self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event), self.draw_shape.hover_draw(Event)])
+        self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event)])
         self.canvas.bind("<Leave>", self.hover_coor.hover_leave)
 
         self.zoom_and_pan = PanAndZoom(self)
         self.canvas.bind("<MouseWheel>", self.zoom_and_pan.mouse_wheel)
         self.canvas.bind("<B1-Motion>", self.zoom_and_pan.pan_move)
         self.canvas.bind("<B1-ButtonRelease>", self.zoom_and_pan.pan_release)
-        self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.pan_draw(Event)])
+        # self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.pan_draw(Event)])
+        self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event)])
+
         self.canvas.bind("<B2-ButtonRelease>", self.zoom_and_pan.pan_release)
 
         self.draw_shape = DrawShape(self)
@@ -78,10 +81,7 @@ class HoverCoor():
 
 
     def hover_motion(self,event):
-        scale_step = self.win_can.scale_step
-        x,y = self.world_grid.screen_to_world(event.x,event.y,scale_step,self.width,self.height)
-        x += self.world_grid.screen_center_world_x
-        y += self.world_grid.screen_center_world_y
+        x,y = self.world_grid.screen_to_world(event.x,event.y)
         self.change_label(x,y)
             
     def hover_leave(self,event):
@@ -102,6 +102,7 @@ class PanAndZoom():
         self.MAX_ZOOM = 30
         self.MIN_ZOOM = -25
         self.scale_step = 0
+        self.pan_x1, self.pan_y1 = None, None
 
     def mouse_wheel(self,event):
         zoom_in = 0
@@ -120,11 +121,11 @@ class PanAndZoom():
         self.canvas.config(cursor='tcross')
 
     def pan_move(self,event):
-        try:
+        if self.pan_x1 != None:
             x2, y2 = event.x, event.y
             self.world_grid.pan_move(x2-self.pan_x1, self.pan_y1-y2)
             self.pan_x1, self.pan_y1 = event.x, event.y
-        except:
+        else:
             self.pan_x1, self.pan_y1 = event.x, event.y
         sleep(0.05)
         self.canvas.config(cursor='circle')

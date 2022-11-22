@@ -16,7 +16,7 @@ class WorldGrid():
         self.canvas = canvas
         self.shape_list = []
         self.screen_center_world_x = 0
-        self.screen_center_world_y = 0       
+        self.screen_center_world_y = 0    
 
     # Scale = scale_step * ZOOM_SCALE
     def _set_scale_step(self,scale_step):
@@ -64,25 +64,35 @@ class WorldGrid():
     def _reset_scale_step(self):
             self.scale_step = 0
 
-    def _get_world_center(self):
-        try:
-             x,y = self.screen_center_world_x ,self.screen_center_world_y
-        except:
-            self._set_screen_center_world()
-        return self.screen_center_world_x,self.screen_center_world_y
+    # The screen coordinates origin shift to center of screen
+    def screen_dir_world(self,screen_x,screen_y):
+        world_x = (screen_x - self.screen_width/2)
+        world_y = -(screen_y - self.screen_height/2)
+        return world_x, world_y
+
+    # The screen coordinates shift back to origin
+    def world_dir_screen(self,world_x,world_y):
+        screen_x = world_x + self.screen_width/2
+        screen_y = -world_y + self.screen_height/2
+        return screen_x, screen_y
+
+    def screen_dir_world(self,screen_x,screen_y):
+        world_x = (screen_x - self.screen_width/2)
+        world_y = -(screen_y - self.screen_height/2)
+        return world_x, world_y
 
     # The world coordinate that the screen is showing
-    @staticmethod
-    def screen_to_world(screen_x,screen_y,scale_step,screen_width,screen_height):
-        world_x = (screen_x - screen_width/2)*(ZOOM_SCALE**scale_step)
-        world_y = -(screen_y - screen_height/2)*(ZOOM_SCALE**scale_step)
+    def screen_to_world(self,screen_x,screen_y):
+        world_x = (screen_x - self.screen_width/2)*(ZOOM_SCALE**-self.scale_step) + self.screen_center_world_x
+        world_y = -(screen_y - self.screen_height/2)*(ZOOM_SCALE**-self.scale_step) + self.screen_center_world_y
         return world_x, world_y
 
     # The screen coordinate in the world 
-    @staticmethod
-    def world_to_screen(world_x,world_y,scale_step,screen_width,screen_height):
-        screen_x = world_x*(ZOOM_SCALE**scale_step) + screen_width/2
-        screen_y = -world_y*(ZOOM_SCALE**scale_step) + screen_height/2
+    def world_to_screen(self,world_x,world_y):
+        world_x -= self.screen_center_world_x
+        world_y -= self.screen_center_world_y
+        screen_x = world_x*(ZOOM_SCALE**self.scale_step) + self.screen_width/2
+        screen_y = -world_y*(ZOOM_SCALE**self.scale_step) + self.screen_height/2
         return screen_x, screen_y
 
     def delete_shape(self,shape):
@@ -105,11 +115,13 @@ class WorldGrid():
 
     # Zooming will expand the image from a point.
     # zoom deviation corrects the deviation from focus point.
+    # zoom_in = -1,0 or 1
     def _zoom_deviation(self,event_x,event_y,zoom_in):
         self.scale_step += zoom_in
-        dev_x, dev_y = self.screen_to_world(event_x,event_y,0,self.screen_width,self.screen_height)
-        self.screen_center_world_x = zoom_in*dev_x*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step) + self.screen_center_world_x
-        self.screen_center_world_y = zoom_in*dev_y*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step) + self.screen_center_world_y
+        dev_x, dev_y = self.screen_dir_world(event_x,event_y)
+        # dev_x, dev_y = self.screen_to_world_temp(event_x,event_y,0,self.screen_width,self.screen_height)
+        self.screen_center_world_x += zoom_in*dev_x*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step)
+        self.screen_center_world_y += zoom_in*dev_y*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step)
 
 ############################################################
 # Common GridShapes inherited by other shapes. 
@@ -119,6 +131,7 @@ class Grid_Shapes():
         self._screen_width = world_grid.screen_width
         self._screen_height = world_grid.screen_height
         self._canvas = world_grid.canvas
+        self.world_grid = world_grid
         self._scale_step = world_grid.scale_step
         self._screen_center_world_x = world_grid.screen_center_world_x
         self._screen_center_world_y = world_grid.screen_center_world_y
@@ -247,8 +260,7 @@ class Background(Grid_Shapes):
     def _to_canvas(self,image,x=0,y=0):
         tk_image = pil.ImageTk.PhotoImage(image)
         self._tk_temp_img = tk_image
-        self.id = self._canvas.create_image(WorldGrid.world_to_screen(self._screen_anchor_x,self._screen_anchor_y,
-                                                                        0,self._screen_width,self._screen_height),
+        self.id = self._canvas.create_image(self.world_grid.world_dir_screen(self._screen_anchor_x,self._screen_anchor_y),
                                                                         anchor=CENTER,image=tk_image,
                                                                         tag=self.tag)
 
@@ -278,12 +290,8 @@ class Straight_Lines(Grid_Shapes):
 
     def _set_attribute(self,x1,y1,x2,y2,fill,width):
         self.fill, self.width = fill, width
-        an_x1,an_y1 = WorldGrid.screen_to_world(x1,y1,-self._scale_step,self._screen_width,self._screen_height)
-        an_x2,an_y2 = WorldGrid.screen_to_world(x2,y2,-self._scale_step,self._screen_width,self._screen_height)
-        self.world_anchor_x1 = self._screen_center_world_x + an_x1
-        self.world_anchor_y1 = self._screen_center_world_y + an_y1
-        self.world_anchor_x2 = self._screen_center_world_x + an_x2
-        self.world_anchor_y2 = self._screen_center_world_y + an_y2
+        self.world_anchor_x1, self.world_anchor_y1 = self.world_grid.screen_to_world(x1,y1)
+        self.world_anchor_x2, self.world_anchor_y2 = self.world_grid.screen_to_world(x2,y2)
         self.x1, self.y1 = x1, y1
         self.x2, self.y2 = x2, y2
 
@@ -301,12 +309,12 @@ class Straight_Lines(Grid_Shapes):
         self._create(self.x1,self.y1,self.x2,self.y2,fill=self.fill,width=self.width)
 
     def _update_screen_anchors(self):
-        x1 = self.world_anchor_x1 - self._screen_center_world_x
-        y1 = self.world_anchor_y1 - self._screen_center_world_y
-        x2 = self.world_anchor_x2 - self._screen_center_world_x
-        y2 = self.world_anchor_y2 - self._screen_center_world_y
-        self.x1, self.y1 = WorldGrid.world_to_screen(x1,y1,self._scale_step,self._screen_width,self._screen_height)
-        self.x2, self.y2 = WorldGrid.world_to_screen(x2,y2,self._scale_step,self._screen_width,self._screen_height)
+        # x1 = self.world_anchor_x1 - self._screen_center_world_x
+        # y1 = self.world_anchor_y1 - self._screen_center_world_y
+        # x2 = self.world_anchor_x2 - self._screen_center_world_x
+        # y2 = self.world_anchor_y2 - self._screen_center_world_y
+        self.x1, self.y1 = self.world_grid.world_to_screen(self.world_anchor_x1,self.world_anchor_y1)
+        self.x2, self.y2 = self.world_grid.world_to_screen(self.world_anchor_x2,self.world_anchor_y2)
 
 class Rectangle(Straight_Lines):
     def __init__(self, world_grid: WorldGrid, x1, y1, x2, y2, fill=None, width=2, anchor_x=0, anchor_y=0):

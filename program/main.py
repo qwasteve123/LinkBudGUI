@@ -81,7 +81,6 @@ if __name__ == "__main__":
     root.state('zoomed')
 
     root.config(background=HexColor.BACKGROUND.value)
-    # root.config(background='white')
     root.iconbitmap("Image_Folder/icon.ico")
     width,height=root.winfo_width(),root.winfo_height()
 
