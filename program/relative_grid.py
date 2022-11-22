@@ -9,30 +9,32 @@ ZOOM_SCALE = 1.1
 # Helps keeping shapes and manage the screen - world transform, telling GridShapes component the coordinates
 # to move.
 class WorldGrid():
-    def __init__(self,screen_width,screen_height,canvas):
-        self.screen_width = screen_width
-        self.screen_height = screen_height
+    def __init__(self,screen_size,canvas):
+        self.screen_size = screen_size
         self.scale_step = 0
         self.canvas = canvas
         self.shape_list = []
-        self.screen_center_world_x = 0
-        self.screen_center_world_y = 0    
+        self.screen_center_world_pt = np.array([0,0])
+
+    @property
+    def scale(self):
+        return ZOOM_SCALE**self.scale_step
 
     # Scale = scale_step * ZOOM_SCALE
     def _set_scale_step(self,scale_step):
         self.scale_step = scale_step
 
-    def draw_coupler(self,anchor_x1,anchor_y1):
-        coupler = Coupler(self,anchor_x1,anchor_y1)
+    def draw_coupler(self,anchor_pt1):
+        coupler = Coupler(self,anchor_pt1)
         return coupler
 
     # Add lines to world
-    def draw_s_line(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
-        line = Straight_Lines(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+    def draw_s_line(self,anchor_pt1,anchor_pt2):
+        line = Straight_Lines(self,anchor_pt1,anchor_pt2)
         return line
 
-    def draw_rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2):
-        rectangle = Rectangle(self,anchor_x1,anchor_y1,anchor_x2,anchor_y2)
+    def draw_rectangle(self,anchor_pt1,anchor_pt2):
+        rectangle = Rectangle(self,anchor_pt1,anchor_pt2)
         return rectangle
 
     # Add CAD image file as background
@@ -45,165 +47,151 @@ class WorldGrid():
         except:
             self.background = Background(self)
             self.background.add_background(filepath)
-            # self.shape_list.append(self.background)
 
     # set the world coordinate that the screen center showing
-    def _set_screen_center_world(self,dev_x: float =0 ,dev_y: float=0):
+    def _set_screen_center_world(self,dev):
         try:
-            self.screen_center_world_x -= dev_x*(ZOOM_SCALE**(-self.scale_step))
-            self.screen_center_world_y -= dev_y*(ZOOM_SCALE**(-self.scale_step))
+            self.screen_center_world_pt -= dev*self.scale
         except:
-            self.screen_center_world_x ,self.screen_center_world_y = 0,0
+            self.screen_center_world_pt = np.array([0,0])
 
     # reset the screen center to world center
     def _reset_screen_world_center(self):
-            self.screen_center_world_x = 0
-            self.screen_center_world_y = 0
+            self.screen_center_world_pt = np.array([0,0])
 
     # reset scale_step to its initial stage
     def _reset_scale_step(self):
             self.scale_step = 0
 
     # The screen coordinates origin shift to center of screen
-    def screen_dir_world(self,screen_x,screen_y):
-        world_x = (screen_x - self.screen_width/2)
-        world_y = -(screen_y - self.screen_height/2)
-        return world_x, world_y
+    def screen_dir_world(self,screen):
+        world = screen - self.screen_size/2
+        world[1] *= -1
+        return world
 
     # The screen coordinates shift back to origin
-    def world_dir_screen(self,world_x,world_y):
-        screen_x = world_x + self.screen_width/2
-        screen_y = -world_y + self.screen_height/2
-        return screen_x, screen_y
-
-    def screen_dir_world(self,screen_x,screen_y):
-        world_x = (screen_x - self.screen_width/2)
-        world_y = -(screen_y - self.screen_height/2)
-        return world_x, world_y
+    def world_dir_screen(self,world):
+        screen = world + self.screen_size/2
+        screen[1] *= -1
+        return screen
 
     # The world coordinate that the screen is showing
-    def screen_to_world(self,screen_x,screen_y):
-        world_x = (screen_x - self.screen_width/2)*(ZOOM_SCALE**-self.scale_step) + self.screen_center_world_x
-        world_y = -(screen_y - self.screen_height/2)*(ZOOM_SCALE**-self.scale_step) + self.screen_center_world_y
-        return world_x, world_y
+    def screen_to_world(self,screen):
+        screen = self.screen_dir_world(screen)
+        world = screen/self.scale + self.screen_center_world_pt
+        return world
 
     # The screen coordinate in the world 
-    def world_to_screen(self,world_x,world_y):
-        world_x -= self.screen_center_world_x
-        world_y -= self.screen_center_world_y
-        screen_x = world_x*(ZOOM_SCALE**self.scale_step) + self.screen_width/2
-        screen_y = -world_y*(ZOOM_SCALE**self.scale_step) + self.screen_height/2
-        return screen_x, screen_y
+    def world_to_screen(self,world):
+        world = (world - self.screen_center_world_pt)* self.scale
+        return self.world_dir_screen(world)
 
     def delete_shape(self,shape):
         shape.remove_from_canvas()
         self.shape_list.remove(shape)
 
     # pan move all shapes i.e. background, lines and others
-    def pan_move(self,x_dev,y_dev):
-        self._set_screen_center_world(x_dev,y_dev)
+    def pan_move(self,dev):
+        self._set_screen_center_world(dev)
         # print('move')
         for shape in self.shape_list:
             # print(type(shape), shape.id)
-            shape.move(self.screen_center_world_x,self.screen_center_world_y)
+            shape.move(self.screen_center_world_pt)
 
     # zoom all shapes
-    def zoom(self,event_x,event_y,zoom_in):
-        self._zoom_deviation(event_x,event_y,zoom_in)
+    def zoom(self,mouse_pt,zoom_in):
+        self._zoom_deviation(mouse_pt,zoom_in)
         for shape in self.shape_list:
-            shape.zoom(self.screen_center_world_x,self.screen_center_world_y,self.scale_step)
+            shape.zoom(self.screen_center_world_pt,self.scale_step)
 
     # Zooming will expand the image from a point.
     # zoom deviation corrects the deviation from focus point.
     # zoom_in = -1,0 or 1
-    def _zoom_deviation(self,event_x,event_y,zoom_in):
+    def _zoom_deviation(self,mouse_pt,zoom_in):
         self.scale_step += zoom_in
-        dev_x, dev_y = self.screen_dir_world(event_x,event_y)
-        # dev_x, dev_y = self.screen_to_world_temp(event_x,event_y,0,self.screen_width,self.screen_height)
-        self.screen_center_world_x += zoom_in*dev_x*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step)
-        self.screen_center_world_y += zoom_in*dev_y*(ZOOM_SCALE-1)*ZOOM_SCALE**(-self.scale_step)
+        dev = self.screen_dir_world(mouse_pt)
+        self.screen_center_world_pt += zoom_in*dev*(ZOOM_SCALE-1)/self.scale
 
 ############################################################
 # Common GridShapes inherited by other shapes. 
 # Get screen center from World_Grid and help shapes showcase.
 class Grid_Shapes():
-    def __init__(self,world_grid : WorldGrid,anchor_x =0,anchor_y =0,tag=None):
-        self._screen_width = world_grid.screen_width
-        self._screen_height = world_grid.screen_height
-        self._canvas = world_grid.canvas
-        self.world_grid = world_grid
-        self._scale_step = world_grid.scale_step
-        self._screen_center_world_x = world_grid.screen_center_world_x
-        self._screen_center_world_y = world_grid.screen_center_world_y
+    def __init__(self,wg : WorldGrid,anchor =np.array([0,0]),tag=None):
+        self._screen_size = wg.screen_size
+        self._canvas = wg.canvas
+        self.wg = wg
+        self._scale_step = wg.scale_step
+        self._screen_center_world_pt = wg.screen_center_world_pt
         self.tag = tag
 
-        self.width, self.height = 0,0
-        self._screen_anchor_x, self._screen_anchor_y = 0,0
-        self.world_anchor_x, self.world_anchor_y = anchor_x,anchor_y
+        self.size = np.array([0,0])
+        self._screen_anchor_x, self._screen_anchor_y = np.array([0,0])
+        self.world_anchor = anchor
 
-        self.append_list(world_grid)
+        wg.shape_list.append(self)
 
-    def append_list(self,world_grid):
-        world_grid.shape_list.append(self)
+    @property
+    def scale(self):
+        return ZOOM_SCALE**(self.scale_step)
 
     def remove_from_canvas(self):
         self._canvas.delete(self.id)
 
     # Input screen_center_world return image center
-    def _world_to_image(self,world_x,world_y):
-        img_world_x = world_x + self.width/2
-        img_world_y = -world_y + self.height/2
-        return img_world_x, img_world_y
+    def _world_to_image(self,world):
+        img_world = world + self.size/2
+        img_world[1] *= -1
+        return img_world
 
-    def _update_screen_center_world(self,screen_center_world_x,screen_center_world_y):
-        self._screen_center_world_x,self._screen_center_world_y = screen_center_world_x,screen_center_world_y
+    def _update_screen_center_world(self):
+        self._screen_center_world_pt = self.wg.screen_center_world_pt
 
-    def _update_scale_step(self,scale_step):
-        self._scale_step = scale_step
+    def _update_scale_step(self):
+        self._scale_step = self.wg.screen_center_world_pt
 
     # Get coordinate of image of area that should be cropped
-    def _get_coor_from_image_center(self,screen_center_world_x,screen_center_world_y,scale_step):
-        img_center_world_x, img_center_world_y = self._world_to_image(screen_center_world_x, screen_center_world_y)
-        world_x1 = img_center_world_x - (self._screen_width/2)*(ZOOM_SCALE**(-scale_step))
-        world_y1 = img_center_world_y - (self._screen_height/2)*(ZOOM_SCALE**(-scale_step))
-        world_x2 = img_center_world_x + (self._screen_width/2)*(ZOOM_SCALE**(-scale_step))
-        world_y2 = img_center_world_y + (self._screen_height/2)*(ZOOM_SCALE**(-scale_step))
-        self._get_screen_anchor(world_x1, world_y1, world_x2, world_y2,self._scale_step)
-        world_x1, world_y1, world_x2, world_y2 = self._get_boundaries(world_x1, world_y1, world_x2, world_y2,scale_step)
-        return world_x1, world_y1, world_x2, world_y2
+    def _get_coor_from_image_center(self,screen_center_world_pt):
+        img_center_world_pt = self._world_to_image(screen_center_world_pt)
+        img_pt1 = img_center_world_pt - (self.size/2)/self.scale
+        img_pt2 = img_center_world_pt + (self.size/2)/self.scale
+        self._get_screen_anchor(img_pt1,img_pt2)
+        img_pt1,img_pt2 = self._get_boundaries(img_pt1,img_pt2)
+        return img_pt1,img_pt2
 
     # Handle the screen boundaries when showing on canvas
-    def _get_screen_anchor(self,world_x1, world_y1, world_x2, world_y2,scale_step):
+    def _get_screen_anchor(self,img_pt1,img_pt2):
         dev_x, dev_y = 0,0
-        if world_x1 < 0 and world_x2 > self.width:
-            dev_x = (self.width - (world_x2 + world_x1))*(ZOOM_SCALE**(scale_step))
-        elif world_x2 > self.width:
-            dev_x = (self.width - world_x2)*(ZOOM_SCALE**(scale_step))
-        elif world_x1 < 0:
-            dev_x = (-world_x1)*(ZOOM_SCALE**(scale_step))
+        width,height = self.size
+        img_pt1_x, img_pt1_y = img_pt1
+        img_pt2_x, img_pt2_y = img_pt2 
+        if img_pt1_x < 0 and img_pt2_x > width:
+            dev_x = (width - (img_pt2_x + img_pt1_x))*self.scale
+        elif img_pt2_x > width:
+            dev_x = (width - img_pt2_x)*self.scale
+        elif img_pt1_x < 0:
+            dev_x = (-img_pt1_x)*self.scale
 
-        if world_y1 < 0 and world_y2 > self.height:
-            dev_y = (self.height - (world_y2 + world_y1))*(ZOOM_SCALE**(scale_step))
-        elif world_y2 > self.height:
-            dev_y = (self.height - world_y2)*(ZOOM_SCALE**(scale_step))
-        elif world_y1 < 0:
-            dev_y = (-world_y1)*(ZOOM_SCALE**(scale_step))
-            # dev_y = (world_x2 - self.width)*(ZOOM_SCALE**(scale_step))
+        if img_pt1_y < 0 and img_pt2_y > height:
+            dev_y = (height - (img_pt2_y + img_pt1_y))*self.scale
+        elif img_pt2_y > height:
+            dev_y = (height - img_pt2_y)*self.scale
+        elif img_pt1_y < 0:
+            dev_y = (-img_pt1_y)*self.scale
 
-        self._screen_anchor_x = dev_x/2
-        self._screen_anchor_y = -dev_y/2
-        self._update_screen_center_world
+        self._screen_anchor = np.array([dev_x/2,-dev_y/2])
 
-    def _get_boundaries(self,world_x1, world_y1, world_x2, world_y2,scale_step):
-        if world_x1 < 0:
-            world_x1 = 0
-        if world_y1 < 0:
-            world_y1 = 0            
-        if world_x2 > self.width:
-            world_x2 = self.width  
-        if world_y2 > self.height:
-            world_y2 = self.height
-        return (world_x1, world_y1, world_x2, world_y2)
+    def _get_boundaries(self,img_pt1,img_pt2):
+        img_pt1_x, img_pt1_y = img_pt1
+        img_pt2_x, img_pt2_y = img_pt2 
+        if img_pt1_x < 0:
+            img_pt1_x = 0
+        if img_pt1_y < 0:
+            img_pt1_y = 0            
+        if img_pt2_x > self.size[0]:
+            img_pt2_x = self.size[0]  
+        if img_pt2_y > self.size[1]:
+            img_pt2_y = self.size[1]
+        return (img_pt1_x, img_pt1_y,img_pt2_x, img_pt2_y)
 
 ###########################################################
 # Inherit GridShapes, responsible for image cropping, resizing and showing on canvas

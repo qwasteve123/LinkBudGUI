@@ -79,19 +79,18 @@ class HoverCoor():
 
 
     def hover_motion(self,event):
-        x,y = self.world_grid.screen_to_world(event.x,event.y)
-        self.change_label(x,y)
+        pt = self.world_grid.screen_to_world([event.x,event.y])
+        self.change_label(pt)
             
     def hover_leave(self,event):
         self.change_label("","")
 
-    def change_label(self,center_x,center_y):
-        if center_x == "":
+    def change_label(self,center):
+        if center[0] == "":
             self.label_coor.config(text='Coordinates  x: ---  y: ---' )
         else:
-            center_x,center_y = int(center_x), int(center_y)
-            self.label_coor.grid(row=self.row,column=self.column+1,sticky=SE)
-            self.label_coor.config(text=f'Coordinates  x:{center_x}  y:{center_y}' )
+            # self.label_coor.grid(row=self.row,column=self.column+1,sticky=SE)
+            self.label_coor.config(text=f'Coordinates  x:{int(center[0])}  y:{int(center[1])}' )
 
 class PanAndZoom():
     def __init__(self,WindowCanvas : WindowCanvas):
@@ -100,7 +99,7 @@ class PanAndZoom():
         self.MAX_ZOOM = 30
         self.MIN_ZOOM = -25
         self.scale_step = 0
-        self.pan_x1, self.pan_y1 = None, None
+        self.pan_pt1 = None
 
     def mouse_wheel(self,event):
         zoom_in = 0
@@ -115,25 +114,22 @@ class PanAndZoom():
         self.world_grid.zoom(event.x,event.y,zoom_in)
 
     def pan_release(self,event):
-        self.pan_x1, self.pan_y1 = None, None
+        self.pan_pt1 = None
         self.canvas.config(cursor='tcross')
 
     def pan_move(self,event):
-        if self.pan_x1 != None:
-            x2, y2 = event.x, event.y
-            self.world_grid.pan_move(x2-self.pan_x1, self.pan_y1-y2)
-            self.pan_x1, self.pan_y1 = event.x, event.y
-        else:
-            self.pan_x1, self.pan_y1 = event.x, event.y
+        if self.pan_pt1 != None:
+            dev_pt = [event.x-self.pan_x1, self.pan_y1-event.y]
+            self.world_grid.pan_move(dev_pt)
+        self.pan_pt1 = [event.x, event.y]
         sleep(0.05)
         self.canvas.config(cursor='circle')
 
 class DrawShape():
     def __init__(self,WindowCanvas : WindowCanvas):
-        self.draw_x1, self.draw_y1 = None,None
+        self.draw_pt1 = None
         self.world_grid = WindowCanvas.world_grid
         self.label_status = WindowCanvas.label_status
-
         self.draw_status = None
         self.temp_shape = None
 
@@ -152,43 +148,40 @@ class DrawShape():
         if self.draw_x1 != None:
             if self.temp_shape != None:
                 self.world_grid.delete_shape(self.temp_shape)
-                self.draw_x1,self.draw_y1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_x1
-                                                            ,self.temp_shape.world_anchor_y1)
-            self.temp_shape = self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,event.x,event.y)
+                self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
+            self.temp_shape = self.world_grid.draw_s_line(self.draw_pt1,[event.x,event.y])
             
     def pan_draw(self,event):
-        if self.draw_x1 != None:
+        if self.draw_pt1 != None:
             if self.temp_shape != None:
                 try:
-                    x1, y1 = self.draw_x1, self.draw_y1
-                    self.draw_x1 = x1 + event.x-self.pan_x1
-                    self.draw_y1 = y1 + self.pan_y1-event.y
-                    print('move ',event.x-self.pan_x1,self.pan_y1-event.y,self.draw_x1,self.draw_y1)
+                    self.draw_pt1[0] += event.x-self.pan_x1
+                    self.draw_pt1[1] += self.pan_y1-event.y
                 except:
-                    self.pan_x1, self.pan_y1 = event.x, event.y
+                    self.pan_pt1 = [event.x, event.y]
     
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
         self.world_grid.add_background(filepath)
 
     def drawline(self,event):
-        if self.draw_x1 == None:
-            self.draw_x1, self.draw_y1 = event.x, event.y
+        if self.draw_pt1 == None:
+            self.draw_pt1 = [event.x, event.y]
         else:
-            x2, y2 = event.x, event.y
-            self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,x2,y2)
-            self.draw_x1, self.draw_y1 = None, None
+            pt_2 = [event.x, event.y]
+            self.world_grid.draw_s_line(self.draw_pt1,pt_2)
+            self.draw_pt1 = None
 
     def draw_rectangle(self,event):
-        if self.draw_x1 == None:
-            self.draw_x1, self.draw_y1 = event.x, event.y
+        if self.draw_pt1 == None:
+            self.draw_pt1 = [event.x, event.y]
         else:
-            x2, y2 = event.x, event.y
-            self.world_grid.draw_rectangle(self.draw_x1,self.draw_y1,x2,y2)
-            self.draw_x1, self.draw_y1 = None,None
+            pt_2 = [event.x, event.y]
+            self.world_grid.draw_rectangle(self.draw_pt1,pt_2)
+            self.draw_pt1 = None
 
     def draw_coupler(self,event):
-        self.world_grid.draw_coupler(event.x,event.y)
+        self.world_grid.draw_coupler([event.x,event.y])
 
     def change_draw(self,status):
         self.label_status.config(text=f'Status: {status}')

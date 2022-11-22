@@ -1,41 +1,35 @@
-from tkinter import *
-
-from PIL import Image, ImageTk
-
-root = Tk()
-root.title("Title")
-root.geometry("600x600")
-root.configure(background="black")
+from tkinter import Tk, Canvas, Frame, BOTH
+import numpy as np
 
 class Example(Frame):
-    def __init__(self, master, *pargs):
-        Frame.__init__(self, master, *pargs)
+
+    def __init__(self):
+        super().__init__()
+
+        self.initUI()
 
 
+    def initUI(self):
 
-        self.image = Image.open("imag/Capture.JPG")
-        self.img_copy= self.image.copy()
+        self.master.title("Lines")
+        self.pack(fill=BOTH, expand=1)
 
-        self.background_image = ImageTk.PhotoImage(self.image)
+        canvas = Canvas(self)
+        a = np.array([[15, 25], [200, 25]])
+        canvas.create_line(a.tolist())
+        canvas.create_line(300, 35, 300, 200, dash=(4, 2))
+        canvas.create_line(55, 85, 155, 85, 105, 180, 55, 85)
 
-        self.background = Label(self, image=self.background_image)
-        self.background.pack(fill=BOTH, expand=YES)
-        self.background.bind('<Configure>', self._resize_image)
-
-    def _resize_image(self,event):
-
-        new_width = event.width
-        new_height = event.height
-
-        self.image = self.img_copy.resize((new_width, new_height))
-
-        self.background_image = ImageTk.PhotoImage(self.image)
-        self.background.configure(image =  self.background_image)
+        canvas.pack(fill=BOTH, expand=1)
 
 
+def main():
 
-e = Example(root)
-e.pack(fill=BOTH, expand=YES)
+    root = Tk()
+    ex = Example()
+    root.geometry("400x250+300+300")
+    root.mainloop()
 
 
-root.mainloop()
+if __name__ == '__main__':
+    main()
