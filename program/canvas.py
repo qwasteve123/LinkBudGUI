@@ -40,16 +40,14 @@ class WindowCanvas():
     # set key binding for canvas
     def key_binding(self):
         self.hover_coor = HoverCoor(self)
-        # self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event), self.draw_shape.hover_draw(Event)])
-        self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event)])
+        self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event), self.draw_shape.hover_draw(Event)])
         self.canvas.bind("<Leave>", self.hover_coor.hover_leave)
 
         self.zoom_and_pan = PanAndZoom(self)
         self.canvas.bind("<MouseWheel>", self.zoom_and_pan.mouse_wheel)
         self.canvas.bind("<B1-Motion>", self.zoom_and_pan.pan_move)
         self.canvas.bind("<B1-ButtonRelease>", self.zoom_and_pan.pan_release)
-        # self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.pan_draw(Event)])
-        self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event)])
+        self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.pan_draw(Event)])
 
         self.canvas.bind("<B2-ButtonRelease>", self.zoom_and_pan.pan_release)
 
@@ -154,12 +152,12 @@ class DrawShape():
         if self.draw_x1 != None:
             if self.temp_shape != None:
                 self.world_grid.delete_shape(self.temp_shape)
-                print(self.draw_x1,self.draw_y1,event.x,event.y)
-                self.temp_shape = self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,event.x,event.y)
-            else:
-                print(self.draw_x1,self.draw_y1,event.x,event.y)
-                self.temp_shape = self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,event.x,event.y)
+                self.draw_x1,self.draw_y1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_x1
+                                                            ,self.temp_shape.world_anchor_y1)
+            print(self.draw_x1,self.draw_y1,event.x,event.y)
 
+            self.temp_shape = self.world_grid.draw_s_line(self.draw_x1,self.draw_y1,event.x,event.y)
+            
     def pan_draw(self,event):
         if self.draw_x1 != None:
             if self.temp_shape != None:
