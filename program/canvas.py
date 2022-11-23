@@ -51,6 +51,7 @@ class WindowCanvas():
         self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.pan_draw(Event)])
 
         self.canvas.bind("<B2-ButtonRelease>", self.zoom_and_pan.pan_release)
+        self.canvas.bind("<Escape>", lambda Event: [self.draw_shape.remove_draw_status(Event)])
 
         self.draw_shape = DrawShape(self)
         self.canvas.bind("<Button-3>", self.draw_shape.start_draw)
@@ -111,7 +112,7 @@ class PanAndZoom():
             if self.scale_step >= self.MIN_ZOOM:
                 zoom_in = 1
                 self.scale_step -=1
-        self.world_grid.zoom(event.x,event.y,zoom_in)
+        self.world_grid.zoom(np.array([event.x,event.y]),zoom_in)
 
     def pan_release(self,event):
         self.pan_pt1 = None
@@ -119,10 +120,9 @@ class PanAndZoom():
 
     def pan_move(self,event):
         if np.any(self.pan_pt1) != None:
-            dev_pt = np.array([event.x-self.pan_pt1[0], self.pan_pt1[1]-event.y])
+            dev_pt = np.array([self.pan_pt1[0]-event.x, event.y-self.pan_pt1[1]])
             self.world_grid.pan_move(dev_pt)
         self.pan_pt1 = np.array([event.x, event.y])
-        print(self.pan_pt1)
         sleep(0.05)
         self.canvas.config(cursor='circle')
 
@@ -135,25 +135,47 @@ class DrawShape():
         self.temp_shape = None
 
     def start_draw(self,event):
-        match self.draw_status:
-            case 's_line':
-                self.drawline(event)
-            case 'rectangle':
-                self.draw_rectangle(event)
-            case 'coupler':
-                self.draw_coupler(event)
-            case None:
-                pass
+        if self.draw_status == None:
+            return
+        elif np.any(self.draw_pt1) == None:
+            self.draw_pt1 = np.array([event.x, event.y])
+            self.draw(1,self.draw_pt1)
+        else:
+            pt2 = np.array([event.x, event.y])
+            self.draw(2,self.draw_pt1,pt2)
+        if self.temp_shape != None:
+            self.world_grid.delete_shape(self.temp_shape)
+            self.temp_shape = None
+            self.draw_pt1 = None
+
+    def draw(self,draw_status,pt1,pt2=None):
+        if draw_status == 1:
+            match self.draw_status[1]:
+                case 'coupler':
+                    shape = self.world_grid.draw_coupler(pt1)
+                    self.draw_pt1 = None
+                    return shape
+                case None:
+                    return
+        elif draw_status == 2:
+            match self.draw_status[1]:    
+                case 's_line':
+                    return self.world_grid.draw_s_line(pt1,pt2)
+                case 'rectangle':
+                    return self.world_grid.draw_rectangle(pt1,pt2)
+        else:
+            return
 
     def hover_draw(self,event):
-        if self.draw_pt1 != None:
+        if np.any(self.draw_pt1) != None and self.draw_status != None:
             if self.temp_shape != None:
                 self.world_grid.delete_shape(self.temp_shape)
                 self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
-            self.temp_shape = self.world_grid.draw_s_line(self.draw_pt1,np.array([event.x,event.y]))
+            pt2 = np.array([event.x, event.y])
+            self.temp_shape = self.draw(2,self.draw_pt1,pt2)
             
     def pan_draw(self,event):
-        if self.draw_pt1 != None:
+        if np.any(self.draw_pt1) != None:
             if self.temp_shape != None:
                 try:
                     self.draw_pt1[0] += event.x-self.pan_x1
@@ -165,31 +187,22 @@ class DrawShape():
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
         self.world_grid.add_background(filepath)
 
-    def drawline(self,event):
-        if self.draw_pt1 == None:
-            self.draw_pt1 = np.array([event.x, event.y])
-        else:
-            pt_2 = np.array([event.x, event.y])
-            self.world_grid.draw_s_line(self.draw_pt1,pt_2)
-            self.draw_pt1 = None
-
-    def draw_rectangle(self,event):
-        if self.draw_pt1 == None:
-            self.draw_pt1 = np.array([event.x, event.y])
-        else:
-            pt_2 = np.array([event.x, event.y])
-            self.world_grid.draw_rectangle(self.draw_pt1,pt_2)
-            self.draw_pt1 = None
-
-    def draw_coupler(self,event):
-        self.world_grid.draw_coupler(np.array([event.x, event.y]))
-
     def change_draw(self,status):
-        self.label_status.config(text=f'Status: {status}')
+        self.label_status.config(text=f'Status: {status[1]}')
         self.draw_status = status
+        self.draw_pt1 = None
+
 
     def change_draw_label(self):
         self.label_status.config(text='Status: s_line Specify first point')
+
+    def remove_draw_status(self,event):
+        self.draw_status = None
+        if self.temp_shape != None:
+            self.world_grid.delete_shape(self.temp_shape)
+            self.temp_shape = None
+            self.draw_pt1 = None
+
 
 if __name__ == "__main__":
     pass 

@@ -61,11 +61,11 @@ class ToolBoxTab():
         my_notebook.add(my_frame2,text='Insert')
         my_notebook.add(my_frame3,text='Annotate')
 
-        line_button = ttk.Button(my_frame1,text= 'line',command=lambda:canvas.draw_shape.change_draw('s_line'))
+        line_button = ttk.Button(my_frame1,text= 'line',command=lambda:canvas.draw_shape.change_draw([2,'s_line']))
         line_button.grid(row=0,column=0,sticky=W)
-        rectangle_button = ttk.Button(my_frame1,text= 'rectangle',command=lambda:canvas.draw_shape.change_draw('rectangle'))
+        rectangle_button = ttk.Button(my_frame1,text= 'rectangle',command=lambda:canvas.draw_shape.change_draw([2,'rectangle']))
         rectangle_button.grid(row=0,column=1,sticky=W)
-        coupler_button = ttk.Button(my_frame1,text= 'coupler',command=lambda:canvas.draw_shape.change_draw('coupler'))
+        coupler_button = ttk.Button(my_frame1,text= 'coupler',command=lambda:canvas.draw_shape.change_draw([1,'coupler']))
         coupler_button.grid(row=0,column=2,sticky=W)
 
 if __name__ == "__main__":
