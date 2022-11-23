@@ -146,6 +146,8 @@ class DrawShape():
             self.temp_shape = None
             self.draw_pt1 = None
 
+
+
     def draw(self,draw_status,pt1,pt2=None):
         if draw_status == 1:
             match self.draw_status[1]:
@@ -165,21 +167,20 @@ class DrawShape():
             return
 
     def hover_draw(self,event):
-        if np.any(self.draw_pt1) != None and self.draw_status != None:
-            if self.temp_shape != None:
-                self.world_grid.delete_shape(self.temp_shape)
-                self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
-            pt2 = np.array([event.x, event.y])
-            self.temp_shape = self.draw(2,self.draw_pt1,pt2)
+        pt2 = np.array([event.x, event.y])
+        if self.temp_shape != None:
+            self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
+            self.temp_shape.change_coor(self.draw_pt1[0],self.draw_pt1[1],pt2[0],pt2[1])
+        elif np.any(self.draw_pt1) != None:
+            self.temp_shape = self.draw(self.draw_status[0],self.draw_pt1,pt2)
             
     def pan_draw(self,event):
-        if np.any(self.draw_pt1) != None:
-            if self.temp_shape != None:
-                try:
-                    self.draw_pt1[0] += event.x-self.pan_x1
-                    self.draw_pt1[1] += self.pan_y1-event.y
-                except:
-                    self.pan_pt1 = np.array([event.x, event.y])
+        pt2 = np.array([event.x, event.y])
+        if self.temp_shape != None:
+            self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
+            self.temp_shape.change_coor(self.draw_pt1[0],self.draw_pt1[1],event.x,event.y)
+        elif np.any(self.draw_pt1) != None:
+            self.temp_shape = self.draw(self,self.draw_status,self.draw_pt1,pt2=None)           
     
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
