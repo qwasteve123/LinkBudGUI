@@ -1,4 +1,3 @@
-from tkinter import filedialog
 from tkinter import *
 from tkinter import ttk
 from ttkthemes import ThemedStyle
@@ -6,7 +5,6 @@ from ttkthemes import ThemedStyle
 from enum import Enum
 import os
 import time
-from PIL import ImageTk,Image
 from relative_grid import *
 from canvas import *
 

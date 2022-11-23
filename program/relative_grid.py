@@ -90,13 +90,13 @@ class WorldGrid():
     def pan_move(self,dev):
         self._set_screen_center_world(dev)
         for shape in self.shape_list:
-            shape.move(self.screen_center_world_pt)
+            shape.move()
 
     # zoom all shapes
     def zoom(self,mouse_pt,zoom_in):
         self._zoom_deviation(mouse_pt,zoom_in)
         for shape in self.shape_list:
-            shape.zoom(self.screen_center_world_pt,self.scale_step)
+            shape.zoom()
 
     # Zooming will expand the image from a point.
     # zoom deviation corrects the deviation from focus point.
@@ -211,13 +211,14 @@ class Background(Grid_Shapes):
     # update background when panning, zooming or adding new background
     def add_background(self,filepath,type=""):
         self.filepath = filepath
+
         try:
             if type == 'pan':
                 image = self._crop_and_resize_image(self._primitive_image)
             else:  
                 image = self._add_new_image(filepath)
                 image = self._crop_and_resize_image(image)
-            self._to_canvas(image)
+            self._to_canvas(image,type)
             return self
         except:
             pass
@@ -236,25 +237,27 @@ class Background(Grid_Shapes):
         return resized_image
 
     # Turn the image to TkImage object and place it on canvas
-    def _to_canvas(self,image):
+    def _to_canvas(self,image,type):
         tk_image = pil.ImageTk.PhotoImage(image)
         self._tk_temp_img = tk_image
-        self.id = self._canvas.create_image(self.wg.world_dir_screen(self._screen_anchor).tolist(),anchor=CENTER,image=tk_image,tag=self.tag)
+        coor = self.wg.world_dir_screen(self._screen_anchor).tolist()
+        if type == "pan":
+            self._canvas.coords(self.id,coor)
+            self._canvas.itemconfig(self.id,image=tk_image)
+        else:
+            self.id = self._canvas.create_image(coor,anchor=CENTER,image=tk_image,tag=self.tag)
 
     # pan move of 
-    def move(self,screen_center_world):
-        self.remove_from_canvas()
+    def move(self):
         self._update_screen_center_world()
         self.add_background(self.filepath,'pan')
 
-    def zoom(self,screen_center_world,scale_step):
-        self.remove_from_canvas()
-        self._update_screen_center_world()
-        self.add_background(self.filepath,'pan')
+    def zoom(self):
+        self.move()
 
 class Straight_Lines(Grid_Shapes):
-    def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,fill='black',width=2, anchor_x=0, anchor_y=0):
-        super().__init__(world_grid, anchor_x, anchor_y)
+    def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,fill='black',width=3):
+        super().__init__(world_grid)
         self._create(screen_pt1,screen_pt2,fill,width)
         self._set_attribute(screen_pt1,screen_pt2,fill,width)
 
@@ -267,22 +270,24 @@ class Straight_Lines(Grid_Shapes):
         self.world_anchor_2 = self.wg.screen_to_world(pt_2)
         self.pt_1,self.pt_2= pt_1,pt_2
          
-    def move(self,screen_center_world_pt):
-        self.remove_from_canvas()
+    def move(self):
         self._update_screen_center_world()
         self._update_screen_anchors()
-        self._create(self.pt_1,self.pt_2,fill=self.fill,width=self.width)
+        self.change_coor(self.pt_1[0],self.pt_1[1],self.pt_2[0],self.pt_2[1])
 
-    def zoom(self,screen_center_world_pt,scale_step):
-        self.move(screen_center_world_pt)
+    def change_coor(self,x1,y1,x2,y2):
+        self._canvas.coords(self.id,x1,y1,x2,y2)
 
+    def zoom(self):
+        self.move()
+ 
     def _update_screen_anchors(self):
         self.pt_1 = self.wg.world_to_screen(self.world_anchor_1)
         self.pt_2 = self.wg.world_to_screen(self.world_anchor_2)
 
 class Rectangle(Straight_Lines):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2, anchor_x=0, anchor_y=0):
-        super().__init__(world_grid, pt_1, pt_2, fill, width, anchor_x, anchor_y)
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2):
+        super().__init__(world_grid, pt_1, pt_2, fill, width)
         
     def _create(self,pt_1, pt_2,fill,width):
         self.id = self._canvas.create_rectangle(pt_1.tolist(),pt_2.tolist(), fill= fill, width=width,tag= self.tag)
@@ -296,12 +301,16 @@ class Coupler(Grid_Shapes):
     def draw(self,anchor_1):
         s = self.scale
         x,y = anchor_1
-        self.wg.draw_rectangle(np.array([x-50*s, y-25*s]),np.array([x+50*s, y+25*s]))
-        self.wg.draw_s_line(np.array([x,y]),np.array([x,y-50*s]))
-        self.wg.draw_s_line(np.array([x,y]),np.array([x+35*s,y]))
-    
-    def fix_scale(self,scale_step):
-        return ZOOM_SCALE**scale_step
+        shape_1 = self.wg.draw_rectangle(np.array([x-50*s, y-25*s]),np.array([x+50*s, y+25*s]))
+        shape_2 = self.wg.draw_s_line(np.array([x,y]),np.array([x,y-50*s]))
+        shape_3 = self.wg.draw_s_line(np.array([x,y]),np.array([x+35*s,y]))
+        self.shape_list = [shape_1,shape_2,shape_3]
+
+class SegmentedLine(Grid_Shapes):
+    def __init__(self, world_grid: WorldGrid, anchor_1=np.array([0,0])):
+        super().__init__(world_grid, anchor_1)
+        self.wg.shape_list.remove(self)
+        self.draw(anchor_1)    
 
 if __name__ == "__main__":
     pass

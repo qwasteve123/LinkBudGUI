@@ -55,7 +55,6 @@ class WindowCanvas():
 
         self.draw_shape = DrawShape(self)
         self.canvas.bind("<Button-3>", self.draw_shape.start_draw)
-        # self.canvas.bind("<B2-Motion>", self.draw_shape.pan_draw)
 
         # set canvas as focus when mouse pointer enter canvas
         self.canvas.bind("<Enter>",self.set_focus)
@@ -123,7 +122,6 @@ class PanAndZoom():
             dev_pt = np.array([self.pan_pt1[0]-event.x, event.y-self.pan_pt1[1]])
             self.world_grid.pan_move(dev_pt)
         self.pan_pt1 = np.array([event.x, event.y])
-        sleep(0.05)
         self.canvas.config(cursor='circle')
 
 class DrawShape():
