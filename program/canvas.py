@@ -41,14 +41,14 @@ class WindowCanvas():
     # set key binding for canvas
     def key_binding(self):
         self.hover_coor = HoverCoor(self)
-        self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event), self.draw_shape.hover_draw(Event)])
+        self.canvas.bind("<Motion>", lambda Event: [self.hover_coor.hover_motion(Event), self.draw_shape.update_temp_draw(Event)])
         self.canvas.bind("<Leave>", self.hover_coor.hover_leave)
 
         self.zoom_and_pan = PanAndZoom(self)
-        self.canvas.bind("<MouseWheel>", self.zoom_and_pan.mouse_wheel)
-        self.canvas.bind("<B1-Motion>", self.zoom_and_pan.pan_move)
+        self.canvas.bind("<MouseWheel>", lambda Event: [self.zoom_and_pan.mouse_wheel(Event), self.draw_shape.update_temp_draw(Event)])
+        self.canvas.bind("<B1-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.update_temp_draw(Event)])
         self.canvas.bind("<B1-ButtonRelease>", self.zoom_and_pan.pan_release)
-        self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.pan_draw(Event)])
+        self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.update_temp_draw(Event)])
 
         self.canvas.bind("<B2-ButtonRelease>", self.zoom_and_pan.pan_release)
         self.canvas.bind("<Escape>", lambda Event: [self.draw_shape.remove_draw_status(Event)])
@@ -127,7 +127,7 @@ class PanAndZoom():
 class DrawShape():
     def __init__(self,WindowCanvas : WindowCanvas):
         self.draw_pt1 = None
-        self.world_grid = WindowCanvas.world_grid
+        self.wg = WindowCanvas.world_grid
         self.label_status = WindowCanvas.label_status
         self.draw_status = None
         self.temp_shape = None
@@ -142,17 +142,15 @@ class DrawShape():
             pt2 = np.array([event.x, event.y])
             self.draw(2,self.draw_pt1,pt2)
         if self.temp_shape != None:
-            self.world_grid.delete_shape(self.temp_shape)
+            self.wg.delete_shape(self.temp_shape)
             self.temp_shape = None
             self.draw_pt1 = None
-
-
 
     def draw(self,draw_status,pt1,pt2=None):
         if draw_status == 1:
             match self.draw_status[1]:
                 case 'coupler':
-                    shape = self.world_grid.draw_coupler(pt1)
+                    shape = self.wg.draw_coupler(pt1)
                     self.draw_pt1 = None
                     return shape
                 case None:
@@ -160,31 +158,23 @@ class DrawShape():
         elif draw_status == 2:
             match self.draw_status[1]:    
                 case 's_line':
-                    return self.world_grid.draw_s_line(pt1,pt2)
+                    return self.wg.draw_s_line(pt1,pt2)
                 case 'rectangle':
-                    return self.world_grid.draw_rectangle(pt1,pt2)
+                    return self.wg.draw_rectangle(pt1,pt2)
         else:
             return
 
-    def hover_draw(self,event):
+    def update_temp_draw(self,event):
         pt2 = np.array([event.x, event.y])
         if self.temp_shape != None:
-            self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
+            self.draw_pt1 = self.wg.world_to_screen(self.temp_shape.world_anchor_1)
             self.temp_shape.change_coor(self.draw_pt1[0],self.draw_pt1[1],pt2[0],pt2[1])
         elif np.any(self.draw_pt1) != None:
-            self.temp_shape = self.draw(self.draw_status[0],self.draw_pt1,pt2)
-            
-    def pan_draw(self,event):
-        pt2 = np.array([event.x, event.y])
-        if self.temp_shape != None:
-            self.draw_pt1 = self.world_grid.world_to_screen(self.temp_shape.world_anchor_1)
-            self.temp_shape.change_coor(self.draw_pt1[0],self.draw_pt1[1],event.x,event.y)
-        elif np.any(self.draw_pt1) != None:
-            self.temp_shape = self.draw(self,self.draw_status,self.draw_pt1,pt2=None)           
+            self.temp_shape = self.draw(self.draw_status[0],self.draw_pt1,pt2)     
     
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)
-        self.world_grid.add_background(filepath)
+        self.wg.add_background(filepath)
 
     def change_draw(self,status):
         self.label_status.config(text=f'Status: {status[1]}')
@@ -198,7 +188,7 @@ class DrawShape():
     def remove_draw_status(self,event):
         self.draw_status = None
         if self.temp_shape != None:
-            self.world_grid.delete_shape(self.temp_shape)
+            self.wg.delete_shape(self.temp_shape)
             self.temp_shape = None
             self.draw_pt1 = None
 
