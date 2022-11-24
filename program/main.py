@@ -90,6 +90,6 @@ if __name__ == "__main__":
     pagetab = PageTab(root,1,1,1,0,SW)
     canvas = WindowCanvas(pagetab.page_frame,width * 0.7,height-190,2,0,SW)
 
-    canvas.world_grid.add_background('imag/B1.jpg')
+    # canvas.world_grid.add_background('imag/B1.jpg')
 
     root.mainloop()

@@ -136,13 +136,14 @@ class DrawShape():
             pt2 = np.array([event.x, event.y])
             self.draw(2,self.draw_pt1,pt2)
         if self.temp_shape != None:
-            self.wg.delete_shape(self.temp_shape)
-            self.temp_shape = None
             if self.draw_status[1] == 'segmented_line':
-                # self.draw_pt1 = pt2
                 pass
             else:
+                self.wg.delete_shape(self.temp_shape)
+                self.temp_shape = None
                 self.draw_pt1 = None
+            
+            
 
     def draw(self,draw_status,pt1,pt2=None):
         if draw_status == 1:
@@ -193,11 +194,18 @@ class DrawShape():
         self.label_status.config(text='Status: s_line Specify first point')
 
     def remove_draw_status(self,event):
-        self.draw_status = None
         if self.temp_shape != None:
-            self.wg.delete_shape(self.temp_shape)
-            self.temp_shape = None
+            if self.draw_status[1] == 'segmented_line':
+                self.temp_shape = None
+                self.seg_line.remove_end_line()
+                self.seg_line = None
+                self.is_drawing_seg = False
+            else:
+                self.wg.delete_shape(self.temp_shape)
+                self.temp_shape = None
             self.draw_pt1 = None
+        self.draw_status = None
+
 
 
 if __name__ == "__main__":

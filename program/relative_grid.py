@@ -44,7 +44,7 @@ class WorldGrid():
 
     def draw_seg_line(self,anchor_pt1,anchor_pt2):
         shape = SegmentedLine(self,anchor_pt1,anchor_pt2)
-        return shape       
+        return shape     
 
     # Add CAD image file as background
     def add_background(self,filepath):
@@ -280,6 +280,7 @@ class TwoPointObject(Grid_Shapes):
         self.change_coor(self.pt_1,self.pt_2)
 
     def change_coor(self,pt_1,pt_2):
+        print(self.id,pt_1[0],pt_1[1],pt_2[0],pt_2[1])
         self._canvas.coords(self.id,pt_1[0],pt_1[1],pt_2[0],pt_2[1])
         # self._set_attribute(pt_1,pt_2)
 
@@ -360,14 +361,19 @@ class SegmentedLine(Grid_Shapes):
             
     def _create(self,prev_pt,next_pt):
         line = StraightLine(self.wg,prev_pt,next_pt)
+        print(line.id)
         return line
+
+    def remove_end_line(self):
+        if len(self.line_list) > 2:
+            self.wg.delete_shape(self.line_list[-1])
     
     @property
     def world_anchor_1(self):
         if len(self.line_list) >= 2:
             return self.line_list[-1].world_anchor_2
         else:
-            return self.line_list[-1].world_anchor_1
+            return self.line_list[0].world_anchor_1
 
 if __name__ == "__main__":
     pass
