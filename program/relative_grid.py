@@ -281,7 +281,7 @@ class TwoPointObject(Grid_Shapes):
 
     def change_coor(self,pt_1,pt_2):
         self._canvas.coords(self.id,pt_1[0],pt_1[1],pt_2[0],pt_2[1])
-        self._set_attribute(pt_1,pt_2)
+        # self._set_attribute(pt_1,pt_2)
 
     def zoom(self):
         self.move()
@@ -321,7 +321,6 @@ class Oval(TwoPointObject):
         return new_pt_1, new_pt_2
 
     def change_coor(self,pt_1,pt_2):
-        print('b')
         pt_1, pt_2=self._convert_coor(pt_1,pt_2)
         return super().change_coor(pt_1,pt_2)
 
