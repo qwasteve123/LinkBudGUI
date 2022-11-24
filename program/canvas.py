@@ -36,7 +36,6 @@ class WindowCanvas():
         self.label_coor.grid(row=row,column=column+1,sticky=SE)
         self.label_status = ttk.Label(app,text='Status: pan')
         self.label_status.grid(row=row,column=column,sticky=SW)
-        
 
     # set key binding for canvas
     def key_binding(self):
@@ -62,11 +61,6 @@ class WindowCanvas():
     # set focus on canvas for drawing    
     def set_focus(self,event):
         event.widget.focus_set()
-
-    @property
-    def scale_step(self):
-        step = self.zoom_and_pan.scale_step
-        return step
 
 class HoverCoor():
     def __init__(self,WindowCanvas : WindowCanvas):
@@ -103,12 +97,10 @@ class PanAndZoom():
 
     def mouse_wheel(self,event):
         zoom_in = 0
-        if event.delta == -120:
-            if self.scale_step <= self.MAX_ZOOM:
+        if event.delta == -120 and self.scale_step <= self.MAX_ZOOM:
                 zoom_in = -1
                 self.scale_step +=1
-        if event.delta == 120:
-            if self.scale_step >= self.MIN_ZOOM:
+        if event.delta == 120 and self.scale_step >= self.MIN_ZOOM:
                 zoom_in = 1
                 self.scale_step -=1
         self.world_grid.zoom(np.array([event.x,event.y]),zoom_in)
@@ -180,8 +172,7 @@ class DrawShape():
         self.label_status.config(text=f'Status: {status[1]}')
         self.draw_status = status
         self.draw_pt1 = None
-
-
+        
     def change_draw_label(self):
         self.label_status.config(text='Status: s_line Specify first point')
 
