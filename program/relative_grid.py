@@ -26,17 +26,25 @@ class WorldGrid():
         self.scale_step = scale_step
 
     def draw_coupler(self,anchor_pt1):
-        coupler = Coupler(self,anchor_pt1)
-        return coupler
+        shape = Coupler(self,anchor_pt1)
+        return shape
 
     # Add lines to world
     def draw_s_line(self,anchor_pt1,anchor_pt2):
-        line = Straight_Lines(self,anchor_pt1,anchor_pt2)
-        return line
+        shape = StraightLine(self,anchor_pt1,anchor_pt2)
+        return shape
 
     def draw_rectangle(self,anchor_pt1,anchor_pt2):
-        rectangle = Rectangle(self,anchor_pt1,anchor_pt2)
-        return rectangle
+        shape = Rectangle(self,anchor_pt1,anchor_pt2)
+        return shape
+
+    def draw_oval(self,anchor_pt1,anchor_pt2):
+        shape = Oval(self,anchor_pt1,anchor_pt2)
+        return shape
+
+    def draw_seg_line(self,anchor_pt1,anchor_pt2):
+        shape = SegmentedLine(self,anchor_pt1,anchor_pt2)
+        return shape       
 
     # Add CAD image file as background
     def add_background(self,filepath):
@@ -255,17 +263,13 @@ class Background(Grid_Shapes):
     def zoom(self):
         self.move()
 
-class Straight_Lines(Grid_Shapes):
+class TwoPointObject(Grid_Shapes):
     def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,fill='black',width=3):
         super().__init__(world_grid)
         self._create(screen_pt1,screen_pt2,fill,width)
-        self._set_attribute(screen_pt1,screen_pt2,fill,width)
+        self._set_attribute(screen_pt1,screen_pt2)
 
-    def _create(self,screen_pt1,screen_pt2,fill,width):
-        self.id = self._canvas.create_line(screen_pt1.tolist(),screen_pt2.tolist(), fill= fill, width=width,tag=self.tag)
-
-    def _set_attribute(self,pt_1,pt_2,fill,width):
-        self.fill, self.width = fill, width
+    def _set_attribute(self,pt_1,pt_2):
         self.world_anchor_1 = self.wg.screen_to_world(pt_1)
         self.world_anchor_2 = self.wg.screen_to_world(pt_2)
         self.pt_1,self.pt_2= pt_1,pt_2
@@ -273,10 +277,11 @@ class Straight_Lines(Grid_Shapes):
     def move(self):
         self._update_screen_center_world()
         self._update_screen_anchors()
-        self.change_coor(self.pt_1[0],self.pt_1[1],self.pt_2[0],self.pt_2[1])
+        self.change_coor(self.pt_1,self.pt_2)
 
-    def change_coor(self,x1,y1,x2,y2):
-        self._canvas.coords(self.id,x1,y1,x2,y2)
+    def change_coor(self,pt_1,pt_2):
+        self._canvas.coords(self.id,pt_1[0],pt_1[1],pt_2[0],pt_2[1])
+        self._set_attribute(pt_1,pt_2)
 
     def zoom(self):
         self.move()
@@ -285,12 +290,40 @@ class Straight_Lines(Grid_Shapes):
         self.pt_1 = self.wg.world_to_screen(self.world_anchor_1)
         self.pt_2 = self.wg.world_to_screen(self.world_anchor_2)
 
-class Rectangle(Straight_Lines):
+class StraightLine(TwoPointObject):
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill='black',width=2):
+        super().__init__(world_grid, pt_1, pt_2, fill, width)
+
+    def _create(self,screen_pt1,screen_pt2,fill,width):
+        self.id = self._canvas.create_line(screen_pt1.tolist(),screen_pt2.tolist(), fill= fill, width=width,tag=self.tag)
+
+class Rectangle(TwoPointObject):
     def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2):
         super().__init__(world_grid, pt_1, pt_2, fill, width)
         
     def _create(self,pt_1, pt_2,fill,width):
         self.id = self._canvas.create_rectangle(pt_1.tolist(),pt_2.tolist(), fill= fill, width=width,tag= self.tag)
+
+class Oval(TwoPointObject):
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2):
+        super().__init__(world_grid, pt_1, pt_2, fill, width)
+        
+    def _create(self,pt_1, pt_2,fill,width):
+        pt_1, pt_2 =self._convert_coor(pt_1,pt_2)
+        self.id = self._canvas.create_oval(pt_1.tolist(),pt_2.tolist(), fill= fill, width=width,tag= self.tag)
+
+    # convert from two corner points to center and circumference point.
+    def _convert_coor(self,pt_1,pt_2):
+        s = (pt_1-pt_2)**2
+        r = np.sqrt(s[0]+s[1])
+        new_pt_1 = pt_1 - r
+        new_pt_2 = pt_1 + r
+        return new_pt_1, new_pt_2
+
+    def change_coor(self,pt_1,pt_2):
+        print('b')
+        pt_1, pt_2=self._convert_coor(pt_1,pt_2)
+        return super().change_coor(pt_1,pt_2)
 
 class Coupler(Grid_Shapes):
     def __init__(self, world_grid: WorldGrid, anchor_1=np.array([0,0])):
@@ -307,10 +340,35 @@ class Coupler(Grid_Shapes):
         self.shape_list = [shape_1,shape_2,shape_3]
 
 class SegmentedLine(Grid_Shapes):
-    def __init__(self, world_grid: WorldGrid, anchor_1=np.array([0,0])):
+    def __init__(self, world_grid: WorldGrid, anchor_1=np.array([0,0]),anchor_2=np.array([0,0])):
         super().__init__(world_grid, anchor_1)
         self.wg.shape_list.remove(self)
-        self.draw(anchor_1)    
+        self.line_list = []
+        self.prev_pt = None
+        self.add_line(anchor_1,anchor_2)
+
+    def add_line(self,*args):
+        if np.any(self.prev_pt) != None:
+            line = self._create(self.prev_pt,args[1])
+        else:
+            line = self._create(args[0],args[1])
+        self.prev_pt = args[1]
+        self.line_list.append(line)
+        return line
+
+    def change_coor(self,pt1,pt2):
+        self.line_list[-1].change_coor(pt1,pt2)
+            
+    def _create(self,prev_pt,next_pt):
+        line = StraightLine(self.wg,prev_pt,next_pt)
+        return line
+    
+    @property
+    def world_anchor_1(self):
+        if len(self.line_list) >= 2:
+            return self.line_list[-1].world_anchor_2
+        else:
+            return self.line_list[-1].world_anchor_1
 
 if __name__ == "__main__":
     pass

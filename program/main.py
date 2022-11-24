@@ -65,6 +65,10 @@ class ToolBoxTab():
         rectangle_button.grid(row=0,column=1,sticky=W)
         coupler_button = ttk.Button(my_frame1,text= 'coupler',command=lambda:canvas.draw_shape.change_draw([1,'coupler']))
         coupler_button.grid(row=0,column=2,sticky=W)
+        oval_button = ttk.Button(my_frame1,text= 'oval',command=lambda:canvas.draw_shape.change_draw([2,'oval']))
+        oval_button.grid(row=0,column=3,sticky=W)
+        seg_line_button = ttk.Button(my_frame1,text= 'Segment line',command=lambda:canvas.draw_shape.change_draw([2,'segmented_line']))
+        seg_line_button.grid(row=0,column=3,sticky=W)
 
 if __name__ == "__main__":
     

@@ -123,6 +123,8 @@ class DrawShape():
         self.label_status = WindowCanvas.label_status
         self.draw_status = None
         self.temp_shape = None
+        self.is_drawing_seg = False
+        self.seg_line = None
 
     def start_draw(self,event):
         if self.draw_status == None:
@@ -136,7 +138,11 @@ class DrawShape():
         if self.temp_shape != None:
             self.wg.delete_shape(self.temp_shape)
             self.temp_shape = None
-            self.draw_pt1 = None
+            if self.draw_status[1] == 'segmented_line':
+                # self.draw_pt1 = pt2
+                pass
+            else:
+                self.draw_pt1 = None
 
     def draw(self,draw_status,pt1,pt2=None):
         if draw_status == 1:
@@ -153,6 +159,16 @@ class DrawShape():
                     return self.wg.draw_s_line(pt1,pt2)
                 case 'rectangle':
                     return self.wg.draw_rectangle(pt1,pt2)
+                case 'oval':
+                    return self.wg.draw_oval(pt1,pt2)  
+                case 'segmented_line':
+                    if self.is_drawing_seg:
+                        self.seg_line.add_line(pt1,pt2)
+                        return self.seg_line
+                    else:
+                        self.seg_line = self.wg.draw_seg_line(pt1,pt2)
+                        self.is_drawing_seg = True
+                    return self.seg_line
         else:
             return
 
@@ -160,7 +176,7 @@ class DrawShape():
         pt2 = np.array([event.x, event.y])
         if self.temp_shape != None:
             self.draw_pt1 = self.wg.world_to_screen(self.temp_shape.world_anchor_1)
-            self.temp_shape.change_coor(self.draw_pt1[0],self.draw_pt1[1],pt2[0],pt2[1])
+            self.temp_shape.change_coor(self.draw_pt1,pt2)
         elif np.any(self.draw_pt1) != None:
             self.temp_shape = self.draw(self.draw_status[0],self.draw_pt1,pt2)     
     
