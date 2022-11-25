@@ -349,15 +349,17 @@ class SegmentedLine(Grid_Shapes):
 
     def add_line(self,*args):
         if np.any(self.prev_pt) != None:
-            line = self._create(self.prev_pt,args[1])
+            pt_1,pt_2 = self.prev_pt,args[1]
         else:
-            line = self._create(args[0],args[1])
+            pt_1,pt_2 = args[0],args[1]
+        line = self._create(pt_1,pt_2)
         self.prev_pt = args[1]
         self.line_list.append(line)
         return line
 
     def change_coor(self,pt1,pt2):
         self.line_list[-1].change_coor(pt1,pt2)
+        self.line_list[-1]._set_attribute(pt1,pt2)
             
     def _create(self,prev_pt,next_pt):
         line = StraightLine(self.wg,prev_pt,next_pt)
@@ -371,7 +373,7 @@ class SegmentedLine(Grid_Shapes):
     @property
     def world_anchor_1(self):
         if len(self.line_list) >= 2:
-            return self.line_list[-1].world_anchor_2
+            return self.line_list[-2].world_anchor_2
         else:
             return self.line_list[0].world_anchor_1
 

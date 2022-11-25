@@ -178,6 +178,7 @@ class DrawShape():
         if self.temp_shape != None:
             self.draw_pt1 = self.wg.world_to_screen(self.temp_shape.world_anchor_1)
             self.temp_shape.change_coor(self.draw_pt1,pt2)
+            self.draw_pt1 = pt2
         elif np.any(self.draw_pt1) != None:
             self.temp_shape = self.draw(self.draw_status[0],self.draw_pt1,pt2)     
     
