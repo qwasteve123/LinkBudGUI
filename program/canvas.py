@@ -134,7 +134,9 @@ class DrawShape():
             self.draw(1,self.draw_pt1)
         else:
             pt2 = np.array([event.x, event.y])
+            print(pt2)
             self.draw(2,self.draw_pt1,pt2)
+
         if self.temp_shape != None:
             if self.draw_status[1] == 'segmented_line':
                 pass
@@ -175,12 +177,13 @@ class DrawShape():
 
     def update_temp_draw(self,event):
         pt2 = np.array([event.x, event.y])
+        
         if self.temp_shape != None:
             self.draw_pt1 = self.wg.world_to_screen(self.temp_shape.world_anchor_1)
             self.temp_shape.change_coor(self.draw_pt1,pt2)
-            self.draw_pt1 = pt2
+            print(pt2)
         elif np.any(self.draw_pt1) != None:
-            self.temp_shape = self.draw(self.draw_status[0],self.draw_pt1,pt2)     
+            self.temp_shape = self.draw(self.draw_status[0],self.draw_pt1,pt2)   
     
     def add_background(self):
         filepath = filedialog.askopenfilename(initialdir=self.initialdir)

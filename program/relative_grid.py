@@ -139,6 +139,13 @@ class Grid_Shapes():
         self._canvas.delete(self.id)
 
     # Input screen_center_world return image center
+   
+
+
+###########################################################
+# Inherit GridShapes, responsible for image cropping, resizing and showing on canvas
+# Background of the drawing, CAD image
+class Background(Grid_Shapes):
     def _world_to_image(self,world):
         img_x = world[0] + self.size[0]/2
         img_y = -world[1] + self.size[1]/2
@@ -186,13 +193,6 @@ class Grid_Shapes():
         if img_pt2[1] > self.size[1]:
             img_pt2[1] = self.size[1]
         return img_pt1,img_pt2
-
-
-###########################################################
-# Inherit GridShapes, responsible for image cropping, resizing and showing on canvas
-# Background of the drawing, CAD image
-class Background(Grid_Shapes):
-
     # resize image 
     def _resize_image(self,image):
         size = (int(image.size[0]*self.scale), int(image.size[1]*self.scale))
@@ -280,7 +280,6 @@ class TwoPointObject(Grid_Shapes):
         self.change_coor(self.pt_1,self.pt_2)
 
     def change_coor(self,pt_1,pt_2):
-        print(self.id,pt_1[0],pt_1[1],pt_2[0],pt_2[1])
         self._canvas.coords(self.id,pt_1[0],pt_1[1],pt_2[0],pt_2[1])
         # self._set_attribute(pt_1,pt_2)
 
@@ -344,16 +343,24 @@ class SegmentedLine(Grid_Shapes):
         super().__init__(world_grid, anchor_1)
         self.wg.shape_list.remove(self)
         self.line_list = []
-        self.prev_pt = None
+        self.prev_world_pt = None
         self.add_line(anchor_1,anchor_2)
 
+    @property
+    def prev_screen_pt(self):
+        if np.any(self.prev_world_pt) != None:
+            pt = self.wg.world_to_screen(self.prev_world_pt)
+            return pt
+        else:
+            return None
+
     def add_line(self,*args):
-        if np.any(self.prev_pt) != None:
-            pt_1,pt_2 = self.prev_pt,args[1]
+        if np.any(self.prev_screen_pt) != None:
+            pt_1,pt_2 = self.prev_screen_pt,args[1]
         else:
             pt_1,pt_2 = args[0],args[1]
         line = self._create(pt_1,pt_2)
-        self.prev_pt = args[1]
+        self.prev_world_pt = self.wg.screen_to_world(args[1])
         self.line_list.append(line)
         return line
 
