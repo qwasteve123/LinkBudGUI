@@ -4,7 +4,7 @@ from tkinter import *
 import numpy as np
 
 # Zoom scale for all items in the canvas
-ZOOM_SCALE = 1.2
+ZOOM_SCALE = 1.1
 
 # Helps keeping shapes and manage the screen - world transform, telling GridShapes component the coordinates
 # to move.
@@ -112,11 +112,10 @@ class WorldGrid():
     # zoom_in = -1,0 or 1
     def _zoom_deviation(self,mouse_pt,zoom_in):
         self.scale_step += zoom_in
-        print(self.screen_center_world_pt)
         dev = self.screen_dir_world(mouse_pt)
         self.zoom_in,self.dev,self.total_dev = zoom_in, dev, zoom_in*dev*(ZOOM_SCALE-1)/self.scale
-        print(self.zoom_in,self.dev)
         self.screen_center_world_pt += zoom_in*dev*(ZOOM_SCALE-1)/self.scale
+        print(zoom_in*dev*(ZOOM_SCALE-1)/self.scale)
 
 
 ############################################################
@@ -135,6 +134,9 @@ class Grid_Shapes():
         self.world_anchor = anchor
 
         wg.shape_list.append(self)
+
+    def _update_screen_center_world(self):
+        self._screen_center_world_pt = self.wg.screen_center_world_pt
 
     @property
     def scale(self):
@@ -158,17 +160,16 @@ class Background(Grid_Shapes):
     def __init__(self, wg: WorldGrid, anchor=np.array([0, 0]), tag=None):
         super().__init__(wg, anchor, tag)
         self.image_list = []
+        self.tuned_screen_center_wld_pt = self.wg.screen_center_world_pt
 
     def _world_to_image(self,world,size):
         img_x = world[0] + size[0]/2
         img_y = -world[1] + size[1]/2
         return np.array([img_x,img_y])
 
-    def tune_screen_center_world(self,world_pt):
-        world_pt
     # Get coordinate of image of area that should be cropped
     def _get_coor_from_image_center(self,size,scale):
-        img_center_world_pt = self._world_to_image(self._screen_center_world_pt,size)
+        img_center_world_pt = self._world_to_image(self.tuned_screen_center_wld_pt,size)
         img_pt1 = img_center_world_pt - (self._screen_size/2)/scale
         img_pt2 = img_center_world_pt + (self._screen_size/2)/scale
 
@@ -192,7 +193,7 @@ class Background(Grid_Shapes):
         elif world_pt1[y] < 0:
             dev[y] = (-world_pt1[y])
 
-        self._screen_anchor = dev/2*(ZOOM_SCALE**self.scale_step_diff)
+        self._screen_anchor = dev/2
         self._screen_anchor[1] *= -1
 
     def _get_boundaries(self,img_pt1,img_pt2,size):
@@ -244,11 +245,12 @@ class Background(Grid_Shapes):
             if self.scale_step <= 0:
                 if key-self.scale_step in range(0,5):
                     self.scale_step_diff = self.scale_step-key
-                    # print(self.scale_step,key,self.scale_step_diff)
+                    self.curr_img_scale = key
                     return image, ZOOM_SCALE**(self.scale_step-key)                
             else:
                 self.scale_step_diff = self.scale_step
-                # print(self.scale_step,key)
+                self.curr_img_scale = 0
+                print(self.scale_step,key)
                 return self.image_list[0], ZOOM_SCALE**(self.scale_step)
                     
 
@@ -296,23 +298,38 @@ class Background(Grid_Shapes):
 
     # pan move of 
     def move(self):
-        self._update_screen_center_world_move()
+        self._update_screen_center_world()
+        # self.correct_show_center()
         self.add_background(self.filepath,'pan')
 
     def zoom(self):
         self._update_screen_center_world_zoom()
+        # self.correct_show_center()
         self.add_background(self.filepath,'pan')
 
-    def _update_screen_center_world_move(self):
-        self._screen_center_world_pt -= self.wg.total_dev
-        self._screen_center_world_pt += self.wg.dev/(ZOOM_SCALE**self.scale_step_diff)
+    # @property
+    # def screen_center_img_pt(self):
+    #     if self.scale_step >= 0:
+    #         return  self.wg.screen_center_world_pt
+    #     else:
+    #         return self.wg.screen_center_world_pt + self.wg.total_dev * (ZOOM_SCALE**(self.scale_step_diff-self.scale_step)-1)
+
+
+    def _update_screen_center_world(self):
+        self._screen_center_world_pt = self.wg.screen_center_world_pt
+        self.tuned_screen_center_wld_pt = self.wg.screen_center_world_pt
+        self.tuned_screen_center_wld_pt -= self.wg.total_dev
+        self.tuned_screen_center_wld_pt += self.wg.dev/(ZOOM_SCALE**self.scale_step_diff)
 
     def _update_screen_center_world_zoom(self):
-        self._screen_center_world_pt -= self.wg.total_dev
-        print(self.wg.zoom_in*self.wg.dev)
-        self._screen_center_world_pt += self.wg.zoom_in*self.wg.dev*(ZOOM_SCALE-1)/(ZOOM_SCALE**(-self.scale_step_diff))
-        # print(self.wg.zoom_in*self.wg.dev*(ZOOM_SCALE-1)/(ZOOM_SCALE**self.scale_step_diff))
-        
+        self._screen_center_world_pt = self.wg.screen_center_world_pt
+        self.tuned_screen_center_wld_pt = self.wg.screen_center_world_pt
+        self.tuned_screen_center_wld_pt -= self.wg.total_dev
+        self.tuned_screen_center_wld_pt += self.wg.zoom_in*self.wg.dev*(ZOOM_SCALE-1)/ZOOM_SCALE**(self.scale_step_diff)
+        print(self.scale_step_diff)
+        # self.tuned_screen_center_wld_pt -= self.wg.total_dev
+        # print(self.scale_step,self.scale_step_diff)
+        # self.tuned_screen_center_wld_pt += self.wg.zoom_in*self.wg.dev*(ZOOM_SCALE-1)/ZOOM_SCALE**(self.scale_step)
 
 class TwoPointObject(Grid_Shapes):
     def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,fill='black',width=3):
