@@ -53,7 +53,7 @@ class WindowCanvas():
         self.canvas.bind("<Escape>", lambda Event: [self.draw_shape.remove_draw_status(Event)])
 
         self.draw_shape = DrawShape(self)
-        self.canvas.bind("<Button-3>", self.draw_shape.start_draw)
+        self.canvas.bind("<Button-1>", self.draw_shape.start_draw)
 
         # set canvas as focus when mouse pointer enter canvas
         self.canvas.bind("<Enter>",self.set_focus)

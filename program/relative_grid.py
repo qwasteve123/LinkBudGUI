@@ -17,6 +17,7 @@ class WorldGrid():
         self.screen_center_world_pt = np.array([0.0,0.0])
         self.background = None
         self.app = app
+        self.gridline = GridLines(self)
 
     @property
     def scale(self):
@@ -99,6 +100,7 @@ class WorldGrid():
     # pan move all shapes i.e. background, lines and others
     def pan_move(self,dev):
         self._set_screen_center_world(dev)
+        self.gridline.move(dev)
         for shape in self.shape_list:
             shape.move()
 
@@ -159,6 +161,74 @@ class Grid_Shapes():
 
     def show_on_canvas(self): #hide object
         self.canvas.itemconfigure(self.id, state='normal')
+
+class GridLines(Grid_Shapes):
+    def __init__(self, wg: WorldGrid, anchor=np.array([0, 0]), tag=None):
+        super().__init__(wg, anchor, tag)
+        self.x_lines,self.y_lines = [],[]
+        self.dist = 50
+        self.set_up_gridlines()
+        self.wg.shape_list.remove(self)
+        self.prev_center = np.array([0.0,0.0])
+        
+
+    def set_up_gridlines(self):
+        width, height = self.screen_size.astype(int)
+        for x in range(0,width,self.dist):
+            line = self.canvas.create_line((x,0),(x,height),fill='#303645',width=0.5)
+            self.x_lines.append(line)
+        for y in range(0,height,self.dist):
+            print(y)
+            line = self.canvas.create_line((0,y),(width,y),fill='#303645',width=0.5)
+            self.y_lines.append(line)
+
+    def move(self,dev):
+        x,y = 0,1
+        for index,line in enumerate(self.x_lines):
+            prev = self.canvas.coords(line)
+            if dev[x] < 0:
+                if prev[x]-dev[x] > self.screen_size[x]:
+                    next_index = (index + 1) % len(self.x_lines)
+                    next_line = self.canvas.coords(self.x_lines[next_index])
+                    new_x = next_line[x]-50
+                else:
+                    new_x = prev[x]-dev[x]
+            else:
+                if prev[x]-dev[x] < 0:
+                    prev_index = index - 1
+                    prev_line = self.canvas.coords(self.x_lines[prev_index])
+                    new_x = prev_line[x]+50
+                else:
+                    new_x = prev[x]-dev[x]
+            new_x = int(new_x)               
+            new = [new_x,0,new_x,self.screen_size[y]]
+            self.canvas.coords(line,new)
+            new_x = None
+
+        for index,line in enumerate(self.y_lines):
+            prev = self.canvas.coords(line)
+            
+            if dev[y] > 0:
+                if prev[y]+dev[y] > self.screen_size[y]:
+                    next_index = (index + 1) % len(self.y_lines)
+                    next_line = self.canvas.coords(self.y_lines[next_index])
+                    new_y = next_line[y]-50
+                else:
+                    new_y = prev[y]+dev[y]
+            else:
+                if prev[y]+dev[y] < 0:
+                    prev_index = index - 1
+                    prev_line = self.canvas.coords(self.y_lines[prev_index])
+                    new_y = prev_line[y]+50
+                else:
+                    new_y = prev[y]+dev[y]
+            new_y = int(new_y)               
+            new = [0,new_y,self.screen_size[x],new_y]
+            self.canvas.coords(line,new)
+            new_y = None       
+
+
+
    
 ###########################################################
 # Inherit GridShapes, responsible for image cropping, resizing and showing on canvas
