@@ -166,35 +166,41 @@ class GridLines(Grid_Shapes):
     def __init__(self, wg: WorldGrid, anchor=np.array([0, 0]), tag=None):
         super().__init__(wg, anchor, tag)
         self.x_lines,self.y_lines = [],[]
-        self.dist = 50
+        self.dist = 20
         self.set_up_gridlines()
         self.wg.shape_list.remove(self)
         self.prev_center = np.array([0.0,0.0])
         
-
     def set_up_gridlines(self):
         width, height = self.screen_size.astype(int)
-        for x in range(0,width,self.dist):
-            line = self.canvas.create_line((x,0),(x,height),fill='#303645',width=0.5)
+        line_int = 5 #thick line interval
+        num_of_x_line, num_of_y_line = ((width//self.dist)//line_int+line_int)*line_int, ((height//self.dist)//line_int+line_int)*line_int
+        for x in range(0,num_of_x_line):
+            line_width = 3 if x%5 == 0 else 0.5
+            pt1,pt2 = np.array([x*self.dist,0]),np.array([x*self.dist,height])
+            line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
             self.x_lines.append(line)
-        for y in range(0,height,self.dist):
-            print(y)
-            line = self.canvas.create_line((0,y),(width,y),fill='#303645',width=0.5)
+        for y in range(0,num_of_y_line):
+            line_width = 3 if y%5 == 0 else 0.5
+            pt1,pt2 = np.array([0,y*self.dist]),np.array([width,y*self.dist])
+            line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
             self.y_lines.append(line)
 
     def move(self,dev):
+        return
         x,y = 0,1
+        dev = dev.astype(int)
         for index,line in enumerate(self.x_lines):
             prev = self.canvas.coords(line)
             if dev[x] < 0:
-                if prev[x]-dev[x] > self.screen_size[x]:
+                if line > self.screen_size[x]:
                     next_index = (index + 1) % len(self.x_lines)
                     next_line = self.canvas.coords(self.x_lines[next_index])
                     new_x = next_line[x]-50
                 else:
                     new_x = prev[x]-dev[x]
             else:
-                if prev[x]-dev[x] < 0:
+                if prev[x]-dev[x]-10 < 0:
                     prev_index = index - 1
                     prev_line = self.canvas.coords(self.x_lines[prev_index])
                     new_x = prev_line[x]+50
@@ -204,6 +210,7 @@ class GridLines(Grid_Shapes):
             new = [new_x,0,new_x,self.screen_size[y]]
             self.canvas.coords(line,new)
             new_x = None
+
 
         for index,line in enumerate(self.y_lines):
             prev = self.canvas.coords(line)
@@ -225,8 +232,7 @@ class GridLines(Grid_Shapes):
             new_y = int(new_y)               
             new = [0,new_y,self.screen_size[x],new_y]
             self.canvas.coords(line,new)
-            new_y = None       
-
+            new_y = None    
 
 
    
