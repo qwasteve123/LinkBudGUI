@@ -25,7 +25,7 @@ class WindowCanvas():
         self.canvas = Canvas(app,width=self.size[0],height=self.size[1],background=self.bkgd_color,
                         cursor='tcross',borderwidth=0,highlightthickness=0,relief=FLAT)
         self.canvas.grid(row=row,column=column,columnspan=2,sticky=sticky)  
-        self.world_grid = WorldGrid(self.size,self.canvas)
+        self.world_grid = WorldGrid(app,self.size,self.canvas)
 
         self.create_labels(self.app,self.row,self.column)
         self.key_binding()
