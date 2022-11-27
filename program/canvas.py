@@ -48,6 +48,7 @@ class WindowCanvas():
         self.canvas.bind("<B1-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.update_temp_draw(Event)])
         self.canvas.bind("<B1-ButtonRelease>", self.zoom_and_pan.pan_release)
         self.canvas.bind("<B2-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.update_temp_draw(Event)])
+        self.canvas.bind("<Button-3>", lambda Event: [self.draw_shape.remove_draw_status(Event)])
 
         self.canvas.bind("<B2-ButtonRelease>", self.zoom_and_pan.pan_release)
         self.canvas.bind("<Escape>", lambda Event: [self.draw_shape.remove_draw_status(Event)])

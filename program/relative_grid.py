@@ -4,7 +4,7 @@ from tkinter import *
 import numpy as np
 
 # Zoom scale for all items in the canvas
-ZOOM_SCALE = 1.2
+ZOOM_SCALE = 1.1
 
 # Helps keeping shapes and manage the screen - world transform, telling GridShapes component the coordinates
 # to move.
@@ -91,7 +91,7 @@ class WorldGrid():
     # The screen coordinate in the world 
     def world_to_screen(self,world):
         world = (world - self.screen_center_world_pt)* self.scale
-        return self.world_dir_screen(world)
+        return self.world_dir_screen(world).astype(int)
 
     def delete_shape(self,shape):
         shape.remove_from_canvas()
@@ -100,13 +100,14 @@ class WorldGrid():
     # pan move all shapes i.e. background, lines and others
     def pan_move(self,dev):
         self._set_screen_center_world(dev)
-        self.gridline.move(dev)
+        self.gridline.move()
         for shape in self.shape_list:
             shape.move()
 
     # zoom all shapes
     def zoom(self,mouse_pt,zoom_in):
         self._zoom_deviation(mouse_pt,zoom_in)
+        self.gridline.zoom()
         for shape in self.shape_list:
             shape.zoom()
 
@@ -132,6 +133,10 @@ class Grid_Shapes():
         self.wg = wg
         self.tag = tag
         wg.shape_list.append(self)
+
+    @property
+    def coor(self):
+        return self.canvas.coords(self.id)
 
     @property
     def screen_size(self):
@@ -162,78 +167,77 @@ class Grid_Shapes():
     def show_on_canvas(self): #hide object
         self.canvas.itemconfigure(self.id, state='normal')
 
+    def itemconfig(self,**kwargs):
+        self.canvas.itemconfig(self.id,kwargs)
+
 class GridLines(Grid_Shapes):
     def __init__(self, wg: WorldGrid, anchor=np.array([0, 0]), tag=None):
         super().__init__(wg, anchor, tag)
         self.x_lines,self.y_lines = [],[]
-        self.dist = 20
+        self.dist, self.prev_dist = 20,20
+        self.dist_list = [1,2,4]
+        self.grid_scale_step = 4
         self.set_up_gridlines()
         self.wg.shape_list.remove(self)
         self.prev_center = np.array([0.0,0.0])
         
     def set_up_gridlines(self):
-        width, height = self.screen_size.astype(int)
-        line_int = 5 #thick line interval
-        num_of_x_line, num_of_y_line = ((width//self.dist)//line_int+line_int)*line_int, ((height//self.dist)//line_int+line_int)*line_int
-        for x in range(0,num_of_x_line):
-            line_width = 3 if x%5 == 0 else 0.5
-            pt1,pt2 = np.array([x*self.dist,0]),np.array([x*self.dist,height])
+        x,y = 0,1
+        screen_pt1 = self.wg.screen_to_world(np.array([0,0])).astype(int)
+        screen_pt2 = self.wg.screen_to_world(self.screen_size).astype(int)
+        for x_step in range(screen_pt1[x]//self.dist-1,screen_pt2[x]//self.dist+100):
+            x_coor = x_step*self.dist
+            pt1,pt2 = np.array([x_coor,screen_pt1[y]]),np.array([x_coor,screen_pt2[y]])
+            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
+            line_width = 3 if x_step % 5 == 0 else 0.5
             line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
+            line.wg.shape_list.remove(line)
             self.x_lines.append(line)
-        for y in range(0,num_of_y_line):
-            line_width = 3 if y%5 == 0 else 0.5
-            pt1,pt2 = np.array([0,y*self.dist]),np.array([width,y*self.dist])
+            
+        for y_step in range(screen_pt2[y]//self.dist-1,screen_pt1[y]//self.dist+100):
+            y_coor = y_step*self.dist
+            pt1,pt2 = np.array([screen_pt1[x],y_coor]),np.array([screen_pt2[x],y_coor])
+            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
+            line_width = 3 if y_step % 5 == 0 else 0.5
             line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
+            line.wg.shape_list.remove(line)
             self.y_lines.append(line)
 
-    def move(self,dev):
-        return
+    def move(self):
         x,y = 0,1
-        dev = dev.astype(int)
-        for index,line in enumerate(self.x_lines):
-            prev = self.canvas.coords(line)
-            if dev[x] < 0:
-                if line > self.screen_size[x]:
-                    next_index = (index + 1) % len(self.x_lines)
-                    next_line = self.canvas.coords(self.x_lines[next_index])
-                    new_x = next_line[x]-50
-                else:
-                    new_x = prev[x]-dev[x]
-            else:
-                if prev[x]-dev[x]-10 < 0:
-                    prev_index = index - 1
-                    prev_line = self.canvas.coords(self.x_lines[prev_index])
-                    new_x = prev_line[x]+50
-                else:
-                    new_x = prev[x]-dev[x]
-            new_x = int(new_x)               
-            new = [new_x,0,new_x,self.screen_size[y]]
-            self.canvas.coords(line,new)
-            new_x = None
-
-
-        for index,line in enumerate(self.y_lines):
-            prev = self.canvas.coords(line)
+        screen_pt1 = self.wg.screen_to_world(np.array([0,0])).astype(int)
+        screen_pt2 = self.wg.screen_to_world(self.screen_size).astype(int)
+        x_count = screen_pt1[x]//self.dist-1
+        y_count = screen_pt2[y]//self.dist-1        
+        for index, line in enumerate(self.x_lines):
+            x_step = x_count+index
+            x_coor = x_step*self.dist
+            pt1,pt2 = np.array([x_coor,screen_pt1[y]]),np.array([x_coor,screen_pt2[y]])
+            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
+            line_width = 3 if x_step % 5 == 0 else 0.5
+            line.change_coor(pt1,pt2)
+            line.itemconfig(width=line_width)
             
-            if dev[y] > 0:
-                if prev[y]+dev[y] > self.screen_size[y]:
-                    next_index = (index + 1) % len(self.y_lines)
-                    next_line = self.canvas.coords(self.y_lines[next_index])
-                    new_y = next_line[y]-50
-                else:
-                    new_y = prev[y]+dev[y]
-            else:
-                if prev[y]+dev[y] < 0:
-                    prev_index = index - 1
-                    prev_line = self.canvas.coords(self.y_lines[prev_index])
-                    new_y = prev_line[y]+50
-                else:
-                    new_y = prev[y]+dev[y]
-            new_y = int(new_y)               
-            new = [0,new_y,self.screen_size[x],new_y]
-            self.canvas.coords(line,new)
-            new_y = None    
+        for index, line in enumerate(self.y_lines):
+            y_step = y_count+index
+            y_coor = (y_count+index)*self.dist
+            pt1,pt2 = np.array([screen_pt1[x],y_coor]),np.array([screen_pt2[x],y_coor])
+            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
+            line_width = 3 if y_step % 5 == 0 else 0.5
+            line.change_coor(pt1,pt2)
+            line.itemconfig(width=line_width)
 
+    def zoom(self):
+        
+        if self.dist*self.scale > 1.8*self.prev_dist:
+            self.grid_scale_step -=1
+            self.dist = self.dist_list[self.grid_scale_step%3]*10**(self.grid_scale_step//3)
+            self.prev_dist = self.dist*self.scale
+        elif 1.8*self.dist*self.scale < self.prev_dist:
+            self.grid_scale_step +=1
+            self.dist = self.dist_list[self.grid_scale_step%3]*10**(self.grid_scale_step//3)
+            self.prev_dist = self.dist*self.scale
+        self.move()
 
    
 ###########################################################
@@ -391,6 +395,11 @@ class TwoPointObject(Grid_Shapes):
         self._create(screen_pt1,screen_pt2,fill,width)
         self._set_attribute(screen_pt1,screen_pt2)
 
+    @property
+    def coor(self):
+        coor = self.canvas.coords(self.id)
+        return np.array([coor[0],coor[1]]),np.array([coor[2],coor[3]])
+
     def _set_attribute(self,pt_1,pt_2):
         self.world_anchor_1 = self.wg.screen_to_world(pt_1)
         self.world_anchor_2 = self.wg.screen_to_world(pt_2)
@@ -402,7 +411,6 @@ class TwoPointObject(Grid_Shapes):
 
     def change_coor(self,pt_1,pt_2):
         self.canvas.coords(self.id,pt_1[0],pt_1[1],pt_2[0],pt_2[1])
-        # self._set_attribute(pt_1,pt_2)
 
     def zoom(self):
         self.move()
