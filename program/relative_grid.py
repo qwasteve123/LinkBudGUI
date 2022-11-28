@@ -1,10 +1,9 @@
-from time import sleep
 import PIL as pil
 from tkinter import *
 import numpy as np
 
 # Zoom scale for all items in the canvas
-ZOOM_SCALE = 1.1
+ZOOM_SCALE = 1.2
 
 # Helps keeping shapes and manage the screen - world transform, telling GridShapes component the coordinates
 # to move.
@@ -183,47 +182,50 @@ class GridLines(Grid_Shapes):
         
     def set_up_gridlines(self):
         x,y = 0,1
-        screen_pt1 = self.wg.screen_to_world(np.array([0,0])).astype(int)
-        screen_pt2 = self.wg.screen_to_world(self.screen_size).astype(int)
-        for x_step in range(screen_pt1[x]//self.dist-1,screen_pt2[x]//self.dist+100):
+        screen_pt1 = self.wg.screen_to_world(np.array([0,0])).astype(float)
+        screen_pt2 = self.wg.screen_to_world(self.screen_size).astype(float)
+        x_rng1, x_rng2 = int(screen_pt1[x]//self.dist-1),int((screen_pt2[x]//self.dist)+100)
+        for x_step in range(x_rng1, x_rng2):
             x_coor = x_step*self.dist
             pt1,pt2 = np.array([x_coor,screen_pt1[y]]),np.array([x_coor,screen_pt2[y]])
             pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if x_step % 5 == 0 else 0.5
+            line_width = 3 if x_coor % (5*self.dist) == 0 else 0.5
             line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
             line.wg.shape_list.remove(line)
             self.x_lines.append(line)
-            
-        for y_step in range(screen_pt2[y]//self.dist-1,screen_pt1[y]//self.dist+100):
+
+        y_rng1, y_rng2 = int((screen_pt2[y]//self.dist)-1),int((screen_pt1[y]//self.dist)+100)
+        for y_step in range(y_rng1, y_rng2):
             y_coor = y_step*self.dist
             pt1,pt2 = np.array([screen_pt1[x],y_coor]),np.array([screen_pt2[x],y_coor])
             pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if y_step % 5 == 0 else 0.5
+            line_width = 3 if y_coor % (5*self.dist) == 0 else 0.5
             line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
             line.wg.shape_list.remove(line)
             self.y_lines.append(line)
 
     def move(self):
         x,y = 0,1
-        screen_pt1 = self.wg.screen_to_world(np.array([0,0])).astype(int)
-        screen_pt2 = self.wg.screen_to_world(self.screen_size).astype(int)
-        x_count = screen_pt1[x]//self.dist-1
-        y_count = screen_pt2[y]//self.dist-1        
+        screen_pt1 = self.wg.screen_to_world(np.array([0,0])).astype(float)
+        screen_pt2 = self.wg.screen_to_world(self.screen_size).astype(float)
+        print(screen_pt1, screen_pt2)
+        x_count = int(screen_pt1[x]//self.dist-1)
+        y_count = int(screen_pt2[y]//self.dist-1)        
         for index, line in enumerate(self.x_lines):
             x_step = x_count+index
-            x_coor = x_step*self.dist
+            x_coor = round(x_step*self.dist,2)
             pt1,pt2 = np.array([x_coor,screen_pt1[y]]),np.array([x_coor,screen_pt2[y]])
             pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if x_step % 5 == 0 else 0.5
+            line_width = 3 if round(x_coor % (5*self.dist),2) == 0 else 0.5
             line.change_coor(pt1,pt2)
             line.itemconfig(width=line_width)
             
         for index, line in enumerate(self.y_lines):
             y_step = y_count+index
-            y_coor = (y_count+index)*self.dist
+            y_coor = round(y_step*self.dist,2)
             pt1,pt2 = np.array([screen_pt1[x],y_coor]),np.array([screen_pt2[x],y_coor])
             pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if y_step % 5 == 0 else 0.5
+            line_width = 3 if round(y_coor % (5*self.dist),2) == 0 else 0.5
             line.change_coor(pt1,pt2)
             line.itemconfig(width=line_width)
 
@@ -237,6 +239,7 @@ class GridLines(Grid_Shapes):
             self.grid_scale_step +=1
             self.dist = self.dist_list[self.grid_scale_step%3]*10**(self.grid_scale_step//3)
             self.prev_dist = self.dist*self.scale
+        print(self.dist)
         self.move()
 
    

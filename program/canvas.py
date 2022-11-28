@@ -85,14 +85,14 @@ class HoverCoor():
             self.label_coor.config(text='Coordinates  x: ---  y: ---' )
         else:
             # self.label_coor.grid(row=self.row,column=self.column+1,sticky=SE)
-            self.label_coor.config(text=f'Coordinates  x:{int(center[0])}  y:{int(center[1])}' )
+            self.label_coor.config(text=f'Coordinates  x:{"%.4f" % center[0]}  y:{"%.4f" % center[1]}' )
 
 class PanAndZoom():
     def __init__(self,WindowCanvas : WindowCanvas):
         self.world_grid = WindowCanvas.world_grid
         self.canvas = WindowCanvas.canvas
-        self.MAX_ZOOM = 30
-        self.MIN_ZOOM = -25
+        self.MAX_ZOOM = 40
+        self.MIN_ZOOM = -35
         self.scale_step = 0
         self.pan_pt1 = None
 
