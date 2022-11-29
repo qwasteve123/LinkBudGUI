@@ -208,7 +208,6 @@ class GridLines(Grid_Shapes):
         x,y = 0,1
         screen_pt1 = self.wg.screen_to_world(np.array([0,0])).astype(float)
         screen_pt2 = self.wg.screen_to_world(self.screen_size).astype(float)
-        print(screen_pt1, screen_pt2)
         x_count = int(screen_pt1[x]//self.dist-1)
         y_count = int(screen_pt2[y]//self.dist-1)        
         for index, line in enumerate(self.x_lines):
