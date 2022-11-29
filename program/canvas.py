@@ -213,6 +213,7 @@ class DrawShape():
             self.draw_pt1 = None
         self.draw_status = None
 
+
 class OnClick():
     def __init__(self,WindowCanvas : WindowCanvas):
         self.wincv = WindowCanvas
@@ -221,8 +222,12 @@ class OnClick():
     
     def onclick(self,event):
         item = self.canvas.find_closest(event.x,event.y)
-        if not 'gridlines' in self.canvas.gettags(item):
-            self.canvas.itemconfig(item,fill='#9cdcfe')
+        tag = self.canvas.gettags(item)
+        if self.wincv.draw_shape.draw_status == None:
+            if 'current' not in tag or 'gridlines' in tag:
+                return
+            else:
+                self.wg.add_selection(item)
 
 
 if __name__ == "__main__":

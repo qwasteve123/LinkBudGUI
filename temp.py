@@ -34,6 +34,7 @@ class GradientFrame(tk.Canvas):
             ng = int(g1 + (g_ratio * i))
             nb = int(b1 + (b_ratio * i))
             color = "#%4.4x%4.4x%4.4x" % (nr,ng,nb)
+            print(color)
             self.create_line(i,0,i,height, tags=("gradient",), fill=color)
         self.lower("gradient")
 

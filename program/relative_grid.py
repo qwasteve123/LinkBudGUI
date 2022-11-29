@@ -124,10 +124,35 @@ class WorldGrid():
             self.screen_center_world_pt += zoom_in*dev*(ZOOM_SCALE-1)/self.scale
             self.scale_step += zoom_in
 
+    def add_selection(self,shape_id):
+        color = self.find_colour(shape_id)
+        selection_color = self.get_selection_color(color)
+        self.canvas.itemconfig('all',fill=selection_color)
+
+    def get_selection_color(self,color):
+        (r1,g1,b1) = self.canvas.winfo_rgb(color)
+        r1,g1,b1 = 255,255,255
+        r2,g2,b2 = 84, 118, 199
+        nr = int(r1+ float(r2-r1) * 0.8)
+        ng = int(g1+ float(g2-g1) * 0.8)
+        nb = int(b1+ float(b2-b1) * 0.8)
+        new_color = "#%x%x%x" % (nr,ng,nb)
+        return new_color        
+
+    def find_colour(self,shape_id):
+        type = self.canvas.type(shape_id)
+        if type in ['line','arc']:
+            color = self.canvas.itemcget(shape_id,'fill')
+        elif type in ['rectangle','oval']:
+            color = self.canvas.itemcget(shape_id,'outline')  
+        else:
+            return None          
+        return color
+
 ############################################################
 # Common GridShapes inherited by other shapes. 
 # Get screen center from World_Grid and help shapes showcase.
-class Grid_Shapes():
+class Grid_Shape():
     def __init__(self,wg : WorldGrid,anchor =np.array([0,0]),tag=None):
         self.wg = wg
         self.tag = tag
@@ -173,7 +198,7 @@ class Grid_Shapes():
     #     for shape_id in args:
     #         self.canvas.itemconfig(shape_id,fill='white')
 
-class GridLines(Grid_Shapes):
+class GridLines(Grid_Shape):
     def __init__(self, wg: WorldGrid, anchor=np.array([0, 0]), tag=None):
         super().__init__(wg, anchor, tag)
         self.x_lines,self.y_lines = [],[]
@@ -257,13 +282,10 @@ class GridLines(Grid_Shapes):
             return 3
         else:
             return 0.5
-            
-
-   
 ###########################################################
 # Inherit GridShapes, responsible for image cropping, resizing and showing on canvas
 # Background of the drawing, CAD image
-class Background(Grid_Shapes):
+class Background(Grid_Shape):
     def __init__(self, wg: WorldGrid, anchor=np.array([0, 0]), tag=None):
         super().__init__(wg, anchor, tag)
         self.image_list = []
@@ -409,7 +431,7 @@ class Background(Grid_Shapes):
     def zoom(self):
         self.add_background(self.filepath,'pan')
 
-class TwoPointObject(Grid_Shapes):
+class TwoPointObject(Grid_Shape):
     def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,**kwarg):
         super().__init__(world_grid)
         self._create(screen_pt1,screen_pt2,**kwarg)
@@ -440,22 +462,22 @@ class TwoPointObject(Grid_Shapes):
         self.pt_2 = self.wg.world_to_screen(self.world_anchor_2)
 
 class StraightLine(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2,fill=None, width=2,**kwargs):
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2,fill='#000000', width=2,**kwargs):
         super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,**kwargs)
 
     def _create(self,screen_pt1,screen_pt2,**kwargs):
         self.id = self.canvas.create_line(screen_pt1.tolist(),screen_pt2.tolist(), kwargs)
 
 class Rectangle(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,**kwargs):
-        super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,**kwargs)
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,outline='#000000',**kwargs):
+        super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,outline=outline,**kwargs)
         
     def _create(self,pt_1, pt_2,**kwargs):
         self.id = self.canvas.create_rectangle(pt_1.tolist(),pt_2.tolist(), kwargs)
 
 class Oval(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,**kwargs):
-        super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,**kwargs)
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,outline='#000000',**kwargs):
+        super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,outline=outline,**kwargs)
         
     def _create(self,pt_1, pt_2,**kwargs):
         pt_1, pt_2 =self._convert_coor(pt_1,pt_2)
@@ -473,7 +495,7 @@ class Oval(TwoPointObject):
         pt_1, pt_2=self._convert_coor(pt_1,pt_2)
         return super().change_coor(pt_1,pt_2)
 
-class Coupler(Grid_Shapes):
+class Coupler(Grid_Shape):
     def __init__(self, world_grid: WorldGrid, anchor_1=np.array([0,0])):
         super().__init__(world_grid, anchor_1)
         self.wg.shape_list.remove(self)
@@ -487,7 +509,7 @@ class Coupler(Grid_Shapes):
         shape_3 = self.wg.draw_s_line(np.array([x,y]),np.array([x+35*s,y]))
         self.shape_list = [shape_1,shape_2,shape_3]
 
-class SegmentedLine(Grid_Shapes):
+class SegmentedLine(Grid_Shape):
     def __init__(self, world_grid: WorldGrid, anchor_1=np.array([0,0]),anchor_2=np.array([0,0])):
         super().__init__(world_grid, anchor_1)
         self.wg.shape_list.remove(self)
