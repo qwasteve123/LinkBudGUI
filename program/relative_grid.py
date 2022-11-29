@@ -1,6 +1,7 @@
 import PIL as pil
 from tkinter import *
 import numpy as np
+import math
 
 # Zoom scale for all items in the canvas
 ZOOM_SCALE = 1.2
@@ -215,7 +216,7 @@ class GridLines(Grid_Shapes):
             x_coor = round(x_step*self.dist,2)
             pt1,pt2 = np.array([x_coor,screen_pt1[y]]),np.array([x_coor,screen_pt2[y]])
             pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if round(x_coor % (5*self.dist),2) == 0 else 0.5
+            line_width = 3 if self.is_thick_line(x_coor,self.dist) else 0.5
             line.change_coor(pt1,pt2)
             line.itemconfig(width=line_width)
             
@@ -224,7 +225,7 @@ class GridLines(Grid_Shapes):
             y_coor = round(y_step*self.dist,2)
             pt1,pt2 = np.array([screen_pt1[x],y_coor]),np.array([screen_pt2[x],y_coor])
             pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if round(y_coor % (5*self.dist),2) == 0 else 0.5
+            line_width = 3 if self.is_thick_line(y_coor,self.dist) else 0.5
             line.change_coor(pt1,pt2)
             line.itemconfig(width=line_width)
 
@@ -240,6 +241,15 @@ class GridLines(Grid_Shapes):
             self.prev_dist = self.dist*self.scale
         print(self.dist)
         self.move()
+
+    def is_thick_line(self,coor,dist):
+        log_num = math.log10(dist)
+        if log_num < 0:
+            power = -(log_num//10)
+            coor *= 10**power
+            dist *= 10**power
+        return coor % (5*dist) == 0
+            
 
    
 ###########################################################
