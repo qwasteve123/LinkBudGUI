@@ -122,8 +122,7 @@ class WorldGrid():
             self.screen_center_world_pt += zoom_in*dev*(ZOOM_SCALE-1)/self.scale
         else:   
             self.screen_center_world_pt += zoom_in*dev*(ZOOM_SCALE-1)/self.scale
-            self.scale_step += zoom_in        
-
+            self.scale_step += zoom_in
 
 ############################################################
 # Common GridShapes inherited by other shapes. 
@@ -170,6 +169,10 @@ class Grid_Shapes():
     def itemconfig(self,**kwargs):
         self.canvas.itemconfig(self.id,kwargs)
 
+    # def select_items(self,*args):
+    #     for shape_id in args:
+    #         self.canvas.itemconfig(shape_id,fill='white')
+
 class GridLines(Grid_Shapes):
     def __init__(self, wg: WorldGrid, anchor=np.array([0, 0]), tag=None):
         super().__init__(wg, anchor, tag)
@@ -189,9 +192,7 @@ class GridLines(Grid_Shapes):
         for x_step in range(x_rng1, x_rng2):
             x_coor = x_step*self.dist
             pt1,pt2 = np.array([x_coor,screen_pt1[y]]),np.array([x_coor,screen_pt2[y]])
-            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if x_coor % (5*self.dist) == 0 else 0.5
-            line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
+            line = self._draw_grid_lines(x_coor,pt1,pt2)
             line.wg.shape_list.remove(line)
             self.x_lines.append(line)
 
@@ -199,11 +200,15 @@ class GridLines(Grid_Shapes):
         for y_step in range(y_rng1, y_rng2):
             y_coor = y_step*self.dist
             pt1,pt2 = np.array([screen_pt1[x],y_coor]),np.array([screen_pt2[x],y_coor])
-            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if y_coor % (5*self.dist) == 0 else 0.5
-            line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width)
+            line = self._draw_grid_lines(y_coor,pt1,pt2)
             line.wg.shape_list.remove(line)
             self.y_lines.append(line)
+
+    def _draw_grid_lines(self,coor,pt1,pt2):
+        pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
+        line_width = self.is_thick_line(coor,self.dist)
+        line = StraightLine(self.wg,pt1,pt2,fill='#303645',width=line_width,tag=('gridlines'))
+        return line
 
     def move(self):
         x,y = 0,1
@@ -215,19 +220,19 @@ class GridLines(Grid_Shapes):
             x_step = x_count+index
             x_coor = round(x_step*self.dist,2)
             pt1,pt2 = np.array([x_coor,screen_pt1[y]]),np.array([x_coor,screen_pt2[y]])
-            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if self.is_thick_line(x_coor,self.dist) else 0.5
-            line.change_coor(pt1,pt2)
-            line.itemconfig(width=line_width)
+            self._change_grid_lines(line,x_coor,pt1,pt2)
             
         for index, line in enumerate(self.y_lines):
             y_step = y_count+index
             y_coor = round(y_step*self.dist,2)
             pt1,pt2 = np.array([screen_pt1[x],y_coor]),np.array([screen_pt2[x],y_coor])
-            pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
-            line_width = 3 if self.is_thick_line(y_coor,self.dist) else 0.5
-            line.change_coor(pt1,pt2)
-            line.itemconfig(width=line_width)
+            self._change_grid_lines(line,y_coor,pt1,pt2)
+
+    def _change_grid_lines(self,line,coor,pt1,pt2):
+        pt1,pt2 = self.wg.world_to_screen(pt1), self.wg.world_to_screen(pt2)
+        line_width = self.is_thick_line(coor,self.dist)
+        line.change_coor(pt1,pt2)
+        line.itemconfig(width=line_width)
 
     def zoom(self):
         
@@ -248,7 +253,10 @@ class GridLines(Grid_Shapes):
             power = -(log_num//10)
             coor *= 10**power
             dist *= 10**power
-        return coor % (5*dist) == 0
+        if coor % (5*dist) == 0:
+            return 3
+        else:
+            return 0.5
             
 
    
@@ -402,9 +410,9 @@ class Background(Grid_Shapes):
         self.add_background(self.filepath,'pan')
 
 class TwoPointObject(Grid_Shapes):
-    def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,fill='black',width=3):
+    def __init__(self, world_grid: WorldGrid,screen_pt1,screen_pt2,**kwarg):
         super().__init__(world_grid)
-        self._create(screen_pt1,screen_pt2,fill,width)
+        self._create(screen_pt1,screen_pt2,**kwarg)
         self._set_attribute(screen_pt1,screen_pt2)
 
     @property
@@ -432,26 +440,26 @@ class TwoPointObject(Grid_Shapes):
         self.pt_2 = self.wg.world_to_screen(self.world_anchor_2)
 
 class StraightLine(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill='black',width=2):
-        super().__init__(world_grid, pt_1, pt_2, fill, width)
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2,fill=None, width=2,**kwargs):
+        super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,**kwargs)
 
-    def _create(self,screen_pt1,screen_pt2,fill,width):
-        self.id = self.canvas.create_line(screen_pt1.tolist(),screen_pt2.tolist(), fill= fill, width=width,tag=self.tag)
+    def _create(self,screen_pt1,screen_pt2,**kwargs):
+        self.id = self.canvas.create_line(screen_pt1.tolist(),screen_pt2.tolist(), kwargs)
 
 class Rectangle(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2):
-        super().__init__(world_grid, pt_1, pt_2, fill, width)
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,**kwargs):
+        super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,**kwargs)
         
-    def _create(self,pt_1, pt_2,fill,width):
-        self.id = self.canvas.create_rectangle(pt_1.tolist(),pt_2.tolist(), fill= fill, width=width,tag= self.tag)
+    def _create(self,pt_1, pt_2,**kwargs):
+        self.id = self.canvas.create_rectangle(pt_1.tolist(),pt_2.tolist(), kwargs)
 
 class Oval(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2):
-        super().__init__(world_grid, pt_1, pt_2, fill, width)
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,**kwargs):
+        super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,**kwargs)
         
-    def _create(self,pt_1, pt_2,fill,width):
+    def _create(self,pt_1, pt_2,**kwargs):
         pt_1, pt_2 =self._convert_coor(pt_1,pt_2)
-        self.id = self.canvas.create_oval(pt_1.tolist(),pt_2.tolist(), fill= fill, width=width,tag= self.tag)
+        self.id = self.canvas.create_oval(pt_1.tolist(),pt_2.tolist(),kwargs)
 
     # convert from two corner points to center and circumference point.
     def _convert_coor(self,pt_1,pt_2):

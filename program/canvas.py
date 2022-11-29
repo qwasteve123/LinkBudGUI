@@ -44,6 +44,7 @@ class WindowCanvas():
         self.canvas.bind("<Leave>", self.hover_coor.hover_leave)
 
         self.zoom_and_pan = PanAndZoom(self)
+        self.onclick = OnClick(self)
         self.canvas.bind("<MouseWheel>", lambda Event: [self.zoom_and_pan.mouse_wheel(Event), self.draw_shape.update_temp_draw(Event)])
         self.canvas.bind("<B1-Motion>", lambda Event: [self.zoom_and_pan.pan_move(Event), self.draw_shape.update_temp_draw(Event)])
         self.canvas.bind("<B1-ButtonRelease>", self.zoom_and_pan.pan_release)
@@ -54,7 +55,8 @@ class WindowCanvas():
         self.canvas.bind("<Escape>", lambda Event: [self.draw_shape.remove_draw_status(Event)])
 
         self.draw_shape = DrawShape(self)
-        self.canvas.bind("<Button-1>", self.draw_shape.start_draw)
+        self.canvas.bind("<Button-1>", lambda Event: [self.draw_shape.start_draw(Event),
+                                                        self.onclick.onclick(Event)])
 
         # set canvas as focus when mouse pointer enter canvas
         self.canvas.bind("<Enter>",self.set_focus)
@@ -211,7 +213,17 @@ class DrawShape():
             self.draw_pt1 = None
         self.draw_status = None
 
+class OnClick():
+    def __init__(self,WindowCanvas : WindowCanvas):
+        self.wincv = WindowCanvas
+        self.canvas = WindowCanvas.canvas
+        self.wg = self.wincv.world_grid
+    
+    def onclick(self,event):
+        item = self.canvas.find_closest(event.x,event.y)
+        if not 'gridlines' in self.canvas.gettags(item):
+            self.canvas.itemconfig(item,fill='#9cdcfe')
 
 
 if __name__ == "__main__":
-    pass 
+    pass
