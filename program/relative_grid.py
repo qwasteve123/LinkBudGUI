@@ -127,17 +127,26 @@ class WorldGrid():
     def add_selection(self,shape_id):
         color = self.find_colour(shape_id)
         selection_color = self.get_selection_color(color)
-        self.canvas.itemconfig('all',fill=selection_color)
+        self.canvas.itemconfig(shape_id,fill=selection_color)
+
+    def add_selection(self,shape_id):
+        color = self.find_colour(shape_id)
+        selection_color = self.get_selection_color(color)
+        self.canvas.itemconfig(shape_id,fill=selection_color)
 
     def get_selection_color(self,color):
-        (r1,g1,b1) = self.canvas.winfo_rgb(color)
-        r1,g1,b1 = 255,255,255
+        (r1,g1,b1) = self.hex_to_rgb(color)
         r2,g2,b2 = 84, 118, 199
         nr = int(r1+ float(r2-r1) * 0.8)
         ng = int(g1+ float(g2-g1) * 0.8)
         nb = int(b1+ float(b2-b1) * 0.8)
         new_color = "#%x%x%x" % (nr,ng,nb)
-        return new_color        
+        return new_color
+
+    def hex_to_rgb(self,hex):
+        hex = hex.lstrip('#')
+        lv = len(hex)
+        return tuple(int(hex[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))      
 
     def find_colour(self,shape_id):
         type = self.canvas.type(shape_id)
@@ -462,7 +471,7 @@ class TwoPointObject(Grid_Shape):
         self.pt_2 = self.wg.world_to_screen(self.world_anchor_2)
 
 class StraightLine(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2,fill='#000000', width=2,**kwargs):
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2,fill='#FF0000', width=2,**kwargs):
         super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,**kwargs)
 
     def _create(self,screen_pt1,screen_pt2,**kwargs):
