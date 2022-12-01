@@ -1,12 +1,8 @@
 from tkinter import filedialog
 from tkinter import *
 from tkinter import ttk
-from ttkthemes import ThemedStyle
 # from pdf2image import convert_fr om_path
 from enum import Enum
-import os
-import time
-from PIL import ImageTk,Image
 from relative_grid import *
 
 class HexColor(Enum):
@@ -14,6 +10,7 @@ class HexColor(Enum):
     TITLE = '#222933'
     TOOLTAB = '#3B4453'
     CANVAS_BACKGROUD = '#222831'
+    SELECTION = '#5476c7'
 
 class WindowCanvas():
     def __init__(self,app,width,height,row,column,sticky):
