@@ -2,6 +2,7 @@ import PIL as pil
 from tkinter import *
 import numpy as np
 import math
+from canvas import HexColor
 
 # Zoom scale for all items in the canvas
 ZOOM_SCALE = 1.2
@@ -14,6 +15,7 @@ class WorldGrid():
         self.scale_step = 0
         self.canvas = canvas
         self.shape_list = []
+        self.selection_list = []
         self.screen_center_world_pt = np.array([0.0,0.0])
         self.background = None
         self.app = app
@@ -124,24 +126,34 @@ class WorldGrid():
             self.screen_center_world_pt += zoom_in*dev*(ZOOM_SCALE-1)/self.scale
             self.scale_step += zoom_in
 
-    def add_selection(self,shape_id):
-        color = self.find_colour(shape_id)
-        selection_color = self.get_selection_color(color)
-        self.canvas.itemconfig(shape_id,fill=selection_color)
+    def remove_selection(self,*shape_ids):
+        if shape_ids == None:
+            return
+        else:
+            for shape_id in shape_ids:
+                self.selection_list.remove(shape_id)
 
-    def add_selection(self,shape_id):
-        color = self.find_colour(shape_id)
-        selection_color = self.get_selection_color(color)
-        self.canvas.itemconfig(shape_id,fill=selection_color)
 
-    def get_selection_color(self,color):
-        (r1,g1,b1) = self.hex_to_rgb(color)
-        r2,g2,b2 = 84, 118, 199
+
+    def add_selection(self,*shape_ids):
+        for shape_id in shape_ids:
+            if shape_id not in self.selection_list:
+                color = self.find_colour(shape_id)
+                selection_color = self.get_selection_color(color)
+                self.change_colour(shape_id,selection_color)
+                self.selection_list.append(shape_id)
+            else:
+                self.remove_selection(shape_id)
+
+    def get_selection_color(self,color1): 
+        r1,g1,b1 = self.hex_to_rgb(color1)
+        r2,g2,b2 = self.hex_to_rgb(HexColor.SELECTION)
         nr = int(r1+ float(r2-r1) * 0.8)
         ng = int(g1+ float(g2-g1) * 0.8)
         nb = int(b1+ float(b2-b1) * 0.8)
         new_color = "#%x%x%x" % (nr,ng,nb)
         return new_color
+
 
     def hex_to_rgb(self,hex):
         hex = hex.lstrip('#')
@@ -157,6 +169,14 @@ class WorldGrid():
         else:
             return None          
         return color
+
+    def change_colour(self,shape_id,color):
+        type = self.canvas.type(shape_id)
+        if type in ['line','arc']:
+            self.canvas.itemconfig(shape_id,fill=color)
+        elif type in ['rectangle','oval']:
+            self.canvas.itemconfig(shape_id,outline=color)  
+
 
 ############################################################
 # Common GridShapes inherited by other shapes. 
@@ -478,7 +498,7 @@ class StraightLine(TwoPointObject):
         self.id = self.canvas.create_line(screen_pt1.tolist(),screen_pt2.tolist(), kwargs)
 
 class Rectangle(TwoPointObject):
-    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,outline='#000000',**kwargs):
+    def __init__(self, world_grid: WorldGrid, pt_1, pt_2, fill=None, width=2,outline='#FFFFFF',**kwargs):
         super().__init__(world_grid, pt_1, pt_2,fill=fill, width=width,outline=outline,**kwargs)
         
     def _create(self,pt_1, pt_2,**kwargs):
